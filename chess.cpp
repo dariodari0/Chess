@@ -130,7 +130,7 @@ bool valid(Move m)
 
 int translateLetter(char letter) {
 	int result = letter - 'A';
-	if (result >= 0 && result <8) {
+	if (result >= 0 && result <BOARD_SIZE) {
 		return result;
 	}
 	else
@@ -142,7 +142,7 @@ int translateLetter(char letter) {
 
 int translateInt(int number) {
 
-	if (number < 0 && number > 8) {
+	if (number < 0 && number > BOARD_SIZE) {
 		throw "Nie ma takiego numeru wiersza na szachownicy!";
 	}
 	number = number - 1;
@@ -173,7 +173,7 @@ int translateInt(int number) {
 }
 
 
-void makeMove(Move m, char board[][8])
+void makeMove(Move m, char board[][BOARD_SIZE])
 {
 	int columnFrom = translateLetter(m.fromCh);
 	int columnTo = translateLetter(m.toCh);
@@ -198,7 +198,7 @@ void makeMove(Move m, char board[][8])
 
 //displays board - takes array board[8][8]
 // and reads its contents, and displays on the screen
-void displayBoard(char board[][8])
+void displayBoard(char board[][BOARD_SIZE])
 {
 	cout << BEGIN;
 	cout << FRINGE;
@@ -237,7 +237,7 @@ void displayBoard(char board[][8])
 // 1 | R | B | N | Q | K | N | B | R | 1
 //   +---+---+---+---+---+---+---+---+
 //      A   B   C   D   E   F   G   H
-void initBoard(char board[][8])
+void initBoard(char board[][BOARD_SIZE])
 {
 	clearScreen();
 	//rząd 8
@@ -277,7 +277,7 @@ void initBoard(char board[][8])
 }
 
 
-void doMove(char board[][8])
+void doMove(char board[][BOARD_SIZE])
 {
 	cout << "Your move:" << endl << flush;
 	Move m = getMove();
@@ -292,7 +292,7 @@ void doMove(char board[][8])
 }
 
 
-bool endOfGame(char board[][8])
+bool endOfGame(char board[][BOARD_SIZE])
 {
 	return false;
 }
@@ -312,12 +312,12 @@ int main()
 Player 1 i Player 2 ub black/white
 druga validacja bool sprawdzajace czy dane pole jest juz zajete 
 dopuszczamy mae i duze litery / zamiana malej i duzej litery
-Funkcja usuwania spacji i liter z alfabetu dalej niz H
-litera liczba itera liczba <-- VALID 
+Funkcja usuwania spacji
+litera liczba itera liczba <-- VALIDACJA 
 
 
-Homowork group: sprawdzamy black/white, sprawdzamy czy dana figura wykonuje poprawny ruch (zasady gry bez roszad) do niedzieli 
+Homowork group: wprowadzamy black/white, sprawdzamy czy dana figura wykonuje poprawny ruch (zasady gry bez roszad) do niedzieli 
 
-homowork individual: check another code (dwie, trzy poprawki zasugerowac)
+homowork individual: sprawdzamy kod innych (dwie, trzy poprawki zasugerowac)
 biblioteki jak cos to tylko standardowe!!
 */
