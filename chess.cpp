@@ -306,5 +306,3 @@ int main()
 		clearScreen();
 	} while (!endOfGame(board));
 }
-
-
