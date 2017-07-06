@@ -308,16 +308,3 @@ int main()
 }
 
 
-/*
-Player 1 i Player 2 ub black/white
-druga validacja bool sprawdzajace czy dane pole jest juz zajete 
-dopuszczamy mae i duze litery / zamiana malej i duzej litery
-Funkcja usuwania spacji
-litera liczba itera liczba <-- VALIDACJA 
-
-
-Homowork group: wprowadzamy black/white, sprawdzamy czy dana figura wykonuje poprawny ruch (zasady gry bez roszad) do niedzieli 
-
-homowork individual: sprawdzamy kod innych (dwie, trzy poprawki zasugerowac)
-biblioteki jak cos to tylko standardowe!!
-*/
