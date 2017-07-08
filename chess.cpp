@@ -30,12 +30,12 @@
 #include <windows.h>
 #endif
 
-namespace ErrorMassage {
-	enum ErrorMassageTypes {
+namespace ErrorMessage {
+	enum ErrorMessageTypes {
 		badFormat,
 		emptySpaceSelected,
 		wrongColorSelected,
-		badPawnMovement,
+		badPieceMovement,
 		squareIsOccupied
 	};
 }
@@ -113,15 +113,122 @@ void removeSpaces(char* s)
 	} while (*s2++);
 }
 
-// Check if proper pawn is selected or space is empty
-bool isPawnSelected(const Move &m, char board[][BOARD_SIZE], bool color) {
+//jawna translacja litery ze struktury Move do współrzędnych używanych na szachownicy
+int translateLetter(char letter) {
+	int result = letter - 'A';
+	if (result >= 0 && result < BOARD_SIZE) {
+		return result;
+	}
+	return -1;
 
+}
+
+
+
+//jawna transalcja cyfry ze struktury Move do współrzędnych używanych na szachownicy
+int translateInt(int number) {
+
+	if (number < 1 && number > BOARD_SIZE) {
+		cout << "Nie ma takiego numeru wiersza na szachownicy!" << endl << flush;
+		return -1;
+	}
+	//change numbering of rows - in MOVE struct there was numbering from 1 to BOARD_SIZE
+	//we change it initially to numbering from 0 to BOARD_SIZE - 1
+	//reverse numbers of rows to correctly address the array board
+	return BOARD_SIZE - number;
+}
+
+
+
+void errorMessage(ErrorMessage::ErrorMessageTypes msg)
+{
+	switch (msg) {
+
+	case ErrorMessage::badFormat:
+		clearLine(20);
+		cout << "Wrong coordinate format!" << endl << flush;
+		break;
+	case ErrorMessage::emptySpaceSelected:
+		clearLine(20);
+		cout << "No pawn on this square" << endl << flush;
+		break;
+	case ErrorMessage::wrongColorSelected:
+		clearLine(20);
+		cout << "This is not your pawn!" << endl << flush;
+		break;
+	case ErrorMessage::badPieceMovement:
+		clearLine(20);
+		cout << "This piece cannot do such movement!" << endl << flush;
+		break;
+	case ErrorMessage::squareIsOccupied:
+		clearLine(20);
+		cout << "Your pawn already occupies this field!" << endl << flush;
+		break;
+	default:
+		clearLine(20);
+		cout << "Error!" << endl << flush;
+
+	}
+}
+
+
+// Check if proper pawn is selected or space is empty
+bool isPieceSelected(const Move &m, char board[][BOARD_SIZE], bool whites) {
+
+	char piece = board[translateInt(m.fromInt)][translateLetter(m.fromCh)];
+	
+	if (piece >= 'a' && piece <= 'z') {
+		if (whites == true) {
+			errorMessage(ErrorMessage::wrongColorSelected);
+			return false;
+		}
+	}
+
+	if (piece >= 'A' && piece <= 'Z') {
+		if (whites == false) {
+			errorMessage(ErrorMessage::wrongColorSelected);
+			return false;
+		}
+	}
+
+	if (piece == ' ') {
+		errorMessage(ErrorMessage::emptySpaceSelected);
+		return false;
+	}
+
+	
+	return true;
 }
 
 // Check is pawn can enter selected square
-bool isSquareAvailable(const Move &m, char board[][BOARD_SIZE], bool color) {
+bool isSquareAvailable(const Move &m, char board[][BOARD_SIZE], bool whites) {
 
+	char piece = board[translateInt(m.toInt)][translateLetter(m.toCh)];
+
+	if (piece >= 'a' && piece <= 'z') {
+		if (whites == false) {
+			errorMessage(ErrorMessage::squareIsOccupied);
+			return false;
+		}
+	}
+	else if (piece >= 'A' && piece <= 'Z') {
+		if (whites == true) {
+			errorMessage(ErrorMessage::squareIsOccupied);
+			return false;
+		}
+	}
+
+	return true;
 }
+
+bool valid(int x, int y) {
+	if (x<0 || x >= BOARD_SIZE || y<0 || y >= BOARD_SIZE) {
+		return false;
+	}
+	return true;
+}
+
+
 
 bool pawn(const Move &m, char board[][BOARD_SIZE]) {
 
@@ -257,7 +364,65 @@ bool knight(const Move&m, char board[][BOARD_SIZE]) {
 
 	//czy analizowny ruch jest dozwolony dla skoczka
 
-	return true;
+
+
+	if (m.toCh == m.fromCh + 2 && m.toInt == m.fromInt + 1) {
+		if (valid(m.fromCh + 2, m.fromInt + 1)) {
+			return true;
+		}
+		return false;
+	}
+
+	else if (m.toCh == m.fromCh + 2 && m.toInt == m.fromInt - 1) {
+		if (valid(m.fromCh + 2, m.fromInt - 1)) {
+			return true;
+		}
+		return false;
+	}
+
+	else if (m.toCh == m.fromCh - 2 && m.toInt == m.fromInt + 1) {
+		if (valid(m.fromCh - 2, m.fromInt + 1)) {
+			return true;
+		}
+		return false;
+	}
+
+	else if (m.toCh == m.fromCh + 2 && m.toInt == m.fromInt - 1) {
+		if (valid(m.fromCh + 2, m.fromInt - 1)) {
+			return true;
+		}
+		return false;
+	}
+
+	else if (m.toCh == m.fromCh + 1 && m.toInt == m.fromInt - 2) {
+		if (valid(m.fromCh + 1, m.fromInt - 2)) {
+			return true;
+		}
+		return false;
+	}
+
+	else if (m.toCh == m.fromCh + 1 && m.toInt == m.fromInt + 2) {
+		if (valid(m.fromCh + 1, m.fromInt + 2)) {
+			return true;
+		}
+		return false;
+	}
+
+	else if (m.toCh == m.fromCh - 1 && m.toInt == m.fromInt - 2) {
+		if (valid(m.fromCh - 1, m.fromInt - 2)) {
+			return true;
+		}
+		return false;
+	}
+
+	else if (m.toCh == m.fromCh - 1 && m.toInt == m.fromInt + 2) {
+		if (valid(m.fromCh - 1, m.fromInt + 2)) {
+			return true;
+		}
+		return false;
+	}
+
+	return false;
 }
 
 
@@ -266,10 +431,49 @@ bool knight(const Move&m, char board[][BOARD_SIZE]) {
 // - czy na polu startowym jest moja figura
 // - czy pole docelowe jest wolne lub czy stoi na nim figura przeciwnika
 // - czy ruch dla danej figury jest dopuszczalny (pomijamy roszadę, ale nalezy uwzględnić, że pierwszy ruch każdego piona może być o dwie pozycje do przodu)
+
+
+
 bool valid(const Move& m, char board[][BOARD_SIZE], bool whites)
 {
-	//sprawdzanie jaka figura jest przewidziana do ruchu
-	//w zależności od figury uruchomiona odpowiednia funkcja weryfikująca
+	char piece = board[translateLetter(m.fromCh)][translateInt(m.fromInt)];
+
+	if ( !(isPieceSelected(m, board, whites)) ) {
+		return false;
+	}
+
+	if (!(isSquareAvailable(m, board, whites)))
+		return false;
+
+	switch (tolower(piece)) {
+
+	case 'P':  
+		if ( !(pawn(m, board)) )
+			return false;
+		break;
+	case 'r': 
+		if ( !(rook(m, board)) )
+			return false;
+		break;
+	case 'n': 
+		if ( !(knight(m, board)) )
+			return false;
+		break;
+	case 'b': 
+		if ( !(bishop(m, board)) )
+			return false;
+		break;
+	case 'q': 
+		if ( !(queen(m, board)) )
+			return false;
+		break;
+	case 'k': 
+		if ( !(king(m, board)) )
+			return false;
+		break;
+
+	}
+
 	return true;
 }
 
@@ -304,34 +508,7 @@ bool valid(Move m)
 
 
 
-void errorMassage(ErrorMassage::ErrorMassageTypes msg)
-{
-	switch (msg) {
-	case ErrorMassage::badFormat:
-		clearLine(20);
-		cout << "Wrong coordinate format!" << endl << flush;
-		break;
-	case ErrorMassage::emptySpaceSelected:
-		clearLine(20);
-		cout << "No pawn on this square" << endl << flush;
-		break;
-	case ErrorMassage::wrongColorSelected:
-		clearLine(20);
-		cout << "This is not your pawn!" << endl << flush;
-		break;
-	case ErrorMassage::badPawnMovement:
-		clearLine(20);
-		cout << "This pawn cannot do such movement!" << endl << flush;
-		break;
-	case ErrorMassage::squareIsOccupied:
-		clearLine(20);
-		cout << "Your pawn already occupies this field!" << endl << flush;
-		break;
-	default:
-		clearLine(20);
-		cout << "Error!" << endl << flush;
-	}
-}
+
 
 
 // Sprawdza czy linia jest w postaci litera liczba litera liczba oraz zamienia litery małe na wielkie, ewentualnie usuwa także spacje np. c    1    D 3 zmiania na C1D3
@@ -358,7 +535,7 @@ bool valid(char line[])
 	}
 
 	if (i == 0) {
-		errorMassage(ErrorMassage::badFormat);
+		errorMessage(ErrorMessage::badFormat);
 		return false;
 	}
 	else {
@@ -370,7 +547,7 @@ bool valid(char line[])
 	}
 
 	if (i == i1) {
-		errorMassage(ErrorMassage::badFormat);
+		errorMessage(ErrorMessage::badFormat);
 		return false;
 	}
 	else
@@ -383,7 +560,7 @@ bool valid(char line[])
 	}
 
 	if (i == i1) {
-		errorMassage(ErrorMassage::badFormat);
+		errorMessage(ErrorMessage::badFormat);
 		return false;
 	}
 	else {
@@ -395,7 +572,7 @@ bool valid(char line[])
 	}
 
 	if (i == i1) {
-		errorMassage(ErrorMassage::badFormat);
+		errorMessage(ErrorMessage::badFormat);
 		return false;
 	}
 	else
@@ -483,30 +660,7 @@ Move getMove()
 	return m;
 }
 
-//jawna translacja litery ze struktury Move do współrzędnych używanych na szachownicy
-int translateLetter(char letter) {
-	int result = letter - 'A';
-	if (result >= 0 && result < BOARD_SIZE) {
-		return result;
-	}
-	return -1;
 
-}
-
-
-
-//jawna transalcja cyfry ze struktury Move do współrzędnych używanych na szachownicy
-int translateInt(int number) {
-
-	if (number < 1 && number > BOARD_SIZE) {
-		cout << "Nie ma takiego numeru wiersza na szachownicy!" << endl << flush;
-		return -1;
-	}
-	//change numbering of rows - in MOVE struct there was numbering from 1 to BOARD_SIZE
-	//we change it initially to numbering from 0 to BOARD_SIZE - 1
-	//reverse numbers of rows to correctly address the array board
-	return BOARD_SIZE - number;
-}
 
 void makeMove(Move m, char board[][BOARD_SIZE])
 {
@@ -593,6 +747,7 @@ void initBoard(char board[][BOARD_SIZE])
 void doMove(char board[][BOARD_SIZE], bool whites)
 {
 	cout << "Your move:" << endl << flush;
+
 	Move m;
 	do {
 		do {
@@ -615,7 +770,7 @@ int main()
 	do {
 		displayBoard(board);
 		doMove(board, whites);
-		whites != whites;
+		whites = !whites;
 		clearScreen();
 	} while (!endOfGame(board));
 
