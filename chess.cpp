@@ -33,7 +33,7 @@ using namespace std;
 
 //CONSTANTS ----------------------------------------------------------------------------------------
 const int BOARD_SIZE = 8;
-
+bool white;
 
 //GLOBAL VARIABLES ---------------------------------------------------------------------------------
 
@@ -102,14 +102,153 @@ void removeSpaces(char* s)
     } while (*s2++);
 }
 
+bool pawn(const Move &m, char board[][BOARD_SIZE], bool whites){
+    //board[m.fromCh][m.fromInt]
+    //czy gra biały czy czarny
+
+    //czy pionek należy do odpowiedniego gracza
+
+    //czy pionek nie może szachować króla przeciwnika
+
+    //czy pionek wykonuje swój pierwszy ruch w grze, wtedy moze iść do przodu o 2 pola lub 1 pole - do przodu lub po skosie
+
+    //jeżeli pionek już nie jest na swojej pozycji startowej to rusza się o 1 pole
+
+    //jeżeli pionek doszedł do końca szachownicy to staje się pp albo PP - pionkiem który może chodzić do tyłu
+
+    //pionek nie może przeskakiwać własnych figur ani pionów
+
+    return true;
+}
+
+bool pPawn(const Move &m, char board[][BOARD_SIZE], bool whites){
+
+    //czy gra bialy czy czarny
+
+    //czy pionek nalezy do wlasciwego gracza
+
+    //czy pionek nie może szachować króla przeciwnika
+
+    //pionek może robić ruch tylko o 1 pole ale może chodzić też do tyłu, nie może przeskakiwać własnych figur ani pionów
+
+    return true;
+}
+
+bool king(const Move&m, char board[][BOARD_SIZE], bool whites){
+
+    //czy gra biały czy czarny
+
+    //czy król należy do właściwego gracza
+
+    //czy pionek nie może szachować króla przeciwnika
+
+    //czy analizowany ruch jest dostępny dla króla
+
+    //król może się poruszać o 1 pole, byle nie wyjść za szachownicę, dowolny kierunek, nie może przeskakiwać własnych pionów ani figur
+
+    return true;
+}
+
+bool queen(const Move&m, char board[][BOARD_SIZE], bool whites){
+    //czy gra biały czy czarny
+
+    //czy hetman/królówka należy właściwego gracza
+
+    //czy nie może szachować króla przeciwnika
+
+    //WYKORZYSTAC KOD DLA GONCA I WIEZY, KROLOWKA JEST JEDNOCZESNIE GONCEM I WIEZA
+
+    //Hetman może poruszać się w dowolnym kierunku (poziomo, pionowo oraz na ukos) o dowolną liczbę wolnych pól,
+
+    // jest więc jakby jednocześnie i gońcem i wieżą. Hetman bije bierkę przeciwnika, zajmując jej pole.
+
+    //czy planowany ruch jest na liście dostępnych ruchów królówki
+
+    //królówka rusza się na wszystkie strony ale tylko po liniach prostych, nie może przeskakiwać własnych figur ani pionów
+
+    return true;
+}
+
+bool rook(const Move&m, char board[][BOARD_SIZE], bool whites){
+    //czy gra biały czy czarny
+
+    //czy wieża należy do właściwego gracza
+
+    //czy nie może szachować króla przeciwnika
+
+    //Wieża porusza się po liniach pionowych i poziomych, w dowolnym kierunku, o dowolną liczbę niezajętych pól.
+
+    // Wieża bije bierkę przeciwnika, zajmując jej pole.
+
+    //Król może poruszać się o jedno pole w dowolnym kierunku (pionowo, poziomo lub na ukos), nie może jednak wejść na pole
+    // atakowane przez bierkę przeciwnika. Jak wszystkie inne bierki, król bije bierkę przeciwnika wchodząc na pole przez
+    // nią zajmowane (z zastrzeżeniem, że nie może to pole być atakowane przez inną bierkę przeciwnika).
+    // Król może również wykonać specyficzne posunięcie, zwane roszadą.
+    //Jeśli król jest atakowany przez bierkę (bierki) przeciwnika, mówi się, że jest w szachu lub jest szachowany.
+    //OSOBNA FUNKCJA SPRAWDZAJĄCA CZY JAKAŚ BIERKA NIE ATAKUJE KRÓLA, WTEDY POPRAWNY JEST TYLKO RUCH RATUJĄCY KRÓLA
+    // W takiej sytuacji gracz ma obowiązek bronić króla (nie może wykonać innego ruchu) przez przesunięcie go na inne pole,
+    // zbicie atakującej bierki przeciwnika lub przesłonięcie ataku własną bierką.
+    // W odróżnieniu od innych bierek król nie może szachować króla przeciwnika.
+    // Na pustej szachownicy niezależnie od miejsca wieża atakuje zawsze 14 pól.
+
+
+    //czy analizowany ruch jest dopuszczalny dla wieży
+
+    //wieża nie może przeskakiwać własnych figur ani pionów
+
+    return true;
+}
+
+bool bishop(const Move&m, char board[][BOARD_SIZE], bool whites){
+    //goniec
+    //Goniec porusza się wyłącznie po przekątnych pól, w dowolnym kierunku, o dowolną liczbę niezajętych pól.
+    // Gońce nie mogą przeskakiwać nad innymi bierkami. Goniec bije bierkę przeciwnika, zajmując jej pole.
+    //ma dostęp tylko do 32 pól, wieża jest silniejsza bo ma dostęp do wszystkich
+
+    //czy gra biały czy czarny
+
+    //czy goniec należy do właściwego gracza
+
+    //czy goniec nie może szachować króla przeciwnika
+
+    //czy analizowany ruch jest dozwolony dla gońca
+
+    return true;
+}
+
+
+bool knight(const Move&m, char board[][BOARD_SIZE], bool whites){
+    //Ruch skoczka można opisać jako krok o jedno pole w pionie lub poziomie, a następnie drugi krok na ukos,
+    // w kierunku oddalającym go od pola startowego. Niekiedy mówi się, że porusza się on „po literze L”.
+    // Przemieszcza się zawsze na pole przeciwnego koloru, pole to jest dodatkowo najbliższym polem o przeciwnym do
+    // wyjściowego kolorze, z wyłączeniem z nim sąsiadujących. Skoczek, tak jak każda inna figura, bije bierkę
+    // przeciwnika zajmując jej pole i porusza się przy biciu według tejże reguły, co i przy zwykłym ruchu.
+
+    //Skoczek jest niezwykły w porównaniu z innymi bierkami szachowymi.
+    // W przeciwieństwie do innych figur szachowych skoczek może zignorować bierki stojące mu na drodze i przeskakiwać przez nie.
+    // Poza tym jest jedyną figurą, która może rozpocząć partię (inną bierką o tej możliwości jest pion).
+
+    //czy gra biały czy czarny
+
+    //czy skoczek należy do właściwego gracza
+
+    //czy skoczek może zaszachować króla
+
+    //czy analizowny ruch jest dozwolony dla skoczka
+
+    return true;
+}
+
 
 
 // Ta funkcja sprawdza czy ruch jest poprawny pod kątem:
 // - czy na polu startowym jest moja figura
 // - czy pole docelowe jest wolne lub czy stoi na nim figura przeciwnika
 // - czy ruch dla danej figury jest dopuszczalny (pomijamy roszadę, ale nalezy uwzględnić, że pierwszy ruch każdego piona może być o dwie pozycje do przodu)
-bool valid(const Move& m, char board[][8], bool whites)
+bool valid(const Move& m, char board[][BOARD_SIZE], bool whites)
 {
+    //sprawdzanie jaka figura jest przewidziana do ruchu
+    //w zależności od figury uruchomiona odpowiednia funkcja weryfikująca
     return true;
 }
 
@@ -424,6 +563,7 @@ int main()
 	do {
 		displayBoard(board);
 		doMove(board);
-	} while (!endOfGame(board));
+        !white;
+    } while (!endOfGame(board));
 
 }
