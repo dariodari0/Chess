@@ -1,4 +1,4 @@
-//     A   B   C   D   E   F   G   H
+﻿//     A   B   C   D   E   F   G   H
 //   +---+---+---+---+---+---+---+---+
 // 8 | r | b | n | q | k | n | b | r | 8
 //   +---+---+---+---+---+---+---+---+
@@ -21,30 +21,41 @@
 
 //LIBRARIES --------------------------------------------------------------------------------------
 // important for VS
-//#include "stdafx.h"
+#include "stdafx.h"
 #include <iostream>
 #include <iomanip>
+#include <string>
 
 #ifdef _WIN32
 #include <windows.h>
 #endif
 
+namespace ErrorMassage {
+	enum ErrorMassageTypes {
+		badFormat,
+		emptySpaceSelected,
+		wrongColorSelected,
+		badPawnMovement,
+		squareIsOccupied
+	};
+}
+
 using namespace std;
 
 //CONSTANTS ----------------------------------------------------------------------------------------
 const int BOARD_SIZE = 8;
-bool white;
+
 
 //GLOBAL VARIABLES ---------------------------------------------------------------------------------
 
-char board[BOARD_SIZE][BOARD_SIZE] = {' '};
-const char startup[8][8] = { 'r', 'b', 'n', 'q', 'k', 'n', 'b', 'r', 'p', 'p','p','p','p','p','p', 'p', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'R', 'B', 'N', 'Q', 'K', 'N', 'B', 'R'};
+char board[BOARD_SIZE][BOARD_SIZE] = { ' ' };
+const char startup[8][8] = { 'r', 'b', 'n', 'q', 'k', 'n', 'b', 'r', 'p', 'p','p','p','p','p','p', 'p', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'R', 'B', 'N', 'Q', 'K', 'N', 'B', 'R' };
 
 struct Move {
-    char fromCh;
-    int fromInt;
-    char toCh;
-    int toInt;
+	char fromCh;
+	int fromInt;
+	char toCh;
+	int toInt;
 };
 
 //GLOBAL FUNCTIONS ---------------------------------------------------------------------------------
@@ -58,7 +69,7 @@ void gotoXY(short x, short y)
 #else
 void gotoXY(short x, short y)
 {
-    cout << "\033[" << y << ";" << x << "f" << flush;
+	cout << "\033[" << y << ";" << x << "f" << flush;
 }
 #endif
 
@@ -66,9 +77,9 @@ void gotoXY(short x, short y)
 
 void clearLine(short y)
 {
-    gotoXY(0, y);
-    cout << setw(128) << " ";
-    gotoXY(0, y);
+	gotoXY(0, y);
+	cout << setw(128) << " ";
+	gotoXY(0, y);
 }
 
 
@@ -76,9 +87,9 @@ void clearLine(short y)
 void clearScreen()
 {
 #ifdef _WIN32
-        system("cls");
+	system("cls");
 #else
-    system("clear");
+	system("clear");
 #endif
 }
 
@@ -86,8 +97,8 @@ void clearScreen()
 /*
 void clearLinesFrom(short y, short count)
 {
-    for (short i = 0; i < count; i++)
-        clearLine(y + i);
+for (short i = 0; i < count; i++)
+clearLine(y + i);
 }
 */
 
@@ -95,134 +106,158 @@ void clearLinesFrom(short y, short count)
 //removes spaces from char*
 void removeSpaces(char* s)
 {
-    char* s2 = s;
-    do {
-        if (*s2 != ' ')
-            *s++ = *s2;
-    } while (*s2++);
+	char* s2 = s;
+	do {
+		if (*s2 != ' ')
+			*s++ = *s2;
+	} while (*s2++);
 }
 
-bool pawn(const Move &m, char board[][BOARD_SIZE], bool whites){
-    //board[m.fromCh][m.fromInt]
-    //czy gra biały czy czarny
+// Check if proper pawn is selected or space is empty
+bool isPawnSelected(const Move &m, char board[][BOARD_SIZE], bool color) {
 
-    //czy pionek należy do odpowiedniego gracza
-
-    //czy pionek wykonuje swój pierwszy ruch w grze, wtedy moze iść do przodu o 2 pola lub 1 pole - do przodu lub po skosie
-
-    //jeżeli pionek już nie jest na swojej pozycji startowej to rusza się o 1 pole
-
-    //jeżeli pionek doszedł do końca szachownicy to staje się pp albo PP - pionkiem który może chodzić do tyłu
-
-    //pionek nie może przeskakiwać własnych figur ani pionów
-
-    return true;
 }
 
-bool pPawn(const Move &m, char board[][BOARD_SIZE], bool whites){
+// Check is pawn can enter selected square
+bool isSquareAvailable(const Move &m, char board[][BOARD_SIZE], bool color) {
 
-    //czy gra bialy czy czarny
-
-    //czy pionek nalezy do wlasciwego gracza
-
-    //pionek może robić ruch tylko o 1 pole ale może chodzić też do tyłu, nie może przeskakiwać własnych figur ani pionów
-
-    return true;
 }
 
-bool king(const Move&m, char board[][BOARD_SIZE], bool whites){
+bool pawn(const Move &m, char board[][BOARD_SIZE]) {
 
-    //czy gra biały czy czarny
+	//czy gra biały czy czarny
 
-    //czy król należy do właściwego gracza
+	//czy pionek należy do odpowiedniego gracza
 
-    //czy analizowany ruch jest dostępny dla króla
-    
-    //król może się poruszać o 1 pole, byle nie wyjść za szachownicę, dowolny kierunek, nie może przeskakiwać własnych pionów ani figur
+	//czy pionek nie może szachować króla przeciwnika
 
-    return true;
+	//czy pionek wykonuje swój pierwszy ruch w grze, wtedy moze iść do przodu o 2 pola lub 1 pole - do przodu lub po skosie
+
+	//jeżeli pionek już nie jest na swojej pozycji startowej to rusza się o 1 pole
+
+	//jeżeli pionek doszedł do końca szachownicy to staje się pp albo PP - pionkiem który może chodzić do tyłu
+
+	//pionek nie może przeskakiwać własnych figur ani pionów
+
+	return true;
 }
 
-bool queen(const Move&m, char board[][BOARD_SIZE], bool whites){
-    //czy gra biały czy czarny
+bool pPawn(const Move &m, char board[][BOARD_SIZE]) {
 
-    //czy hetman/królówka należy właściwego gracza
+	//czy gra bialy czy czarny
 
-    //WYKORZYSTAC KOD DLA GONCA I WIEZY, KROLOWKA JEST JEDNOCZESNIE GONCEM I WIEZA
+	//czy pionek nalezy do wlasciwego gracza
 
-    //Hetman może poruszać się w dowolnym kierunku (poziomo, pionowo oraz na ukos) o dowolną liczbę wolnych pól,
+	//czy pionek nie może szachować króla przeciwnika
 
-    // jest więc jakby jednocześnie i gońcem i wieżą. Hetman bije bierkę przeciwnika, zajmując jej pole.
+	//pionek może robić ruch tylko o 1 pole ale może chodzić też do tyłu, nie może przeskakiwać własnych figur ani pionów
 
-    //czy planowany ruch jest na liście dostępnych ruchów królówki
-
-    //królówka rusza się na wszystkie strony ale tylko po liniach prostych, nie może przeskakiwać własnych figur ani pionów
-
-    return true;
+	return true;
 }
 
-bool rook(const Move&m, char board[][BOARD_SIZE], bool whites){
-    //czy gra biały czy czarny
+bool king(const Move&m, char board[][BOARD_SIZE]) {
 
-    //czy wieża należy do właściwego gracza
+	//czy gra biały czy czarny
 
-    //Wieża porusza się po liniach pionowych i poziomych, w dowolnym kierunku, o dowolną liczbę niezajętych pól.
+	//czy król należy do właściwego gracza
 
-    // Wieża bije bierkę przeciwnika, zajmując jej pole.
+	//czy pionek nie może szachować króla przeciwnika
 
-    //Król może poruszać się o jedno pole w dowolnym kierunku (pionowo, poziomo lub na ukos), nie może jednak wejść na pole
-    // atakowane przez bierkę przeciwnika. Jak wszystkie inne bierki, król bije bierkę przeciwnika wchodząc na pole przez
-    // nią zajmowane (z zastrzeżeniem, że nie może to pole być atakowane przez inną bierkę przeciwnika).
-    // Król może również wykonać specyficzne posunięcie, zwane roszadą.
-    //Jeśli król jest atakowany przez bierkę (bierki) przeciwnika, mówi się, że jest w szachu lub jest szachowany.
-    //OSOBNA FUNKCJA SPRAWDZAJĄCA CZY JAKAŚ BIERKA NIE ATAKUJE KRÓLA, WTEDY POPRAWNY JEST TYLKO RUCH RATUJĄCY KRÓLA
-    // W takiej sytuacji gracz ma obowiązek bronić króla (nie może wykonać innego ruchu) przez przesunięcie go na inne pole,
-    // zbicie atakującej bierki przeciwnika lub przesłonięcie ataku własną bierką.
-    // W odróżnieniu od innych bierek król nie może szachować króla przeciwnika.
-    // Na pustej szachownicy niezależnie od miejsca wieża atakuje zawsze 14 pól.
+	//czy analizowany ruch jest dostępny dla króla
 
+	//król może się poruszać o 1 pole, byle nie wyjść za szachownicę, dowolny kierunek, nie może przeskakiwać własnych pionów ani figur
 
-    //czy analizowany ruch jest dopuszczalny dla wieży
-
-    //wieża nie może przeskakiwać własnych figur ani pionów
-
-    return true;
+	return true;
 }
 
-bool bishop(const Move&m, char board[][BOARD_SIZE], bool whites){
-    //goniec
-    //Goniec porusza się wyłącznie po przekątnych pól, w dowolnym kierunku, o dowolną liczbę niezajętych pól.
-    // Gońce nie mogą przeskakiwać nad innymi bierkami. Goniec bije bierkę przeciwnika, zajmując jej pole.
-    //ma dostęp tylko do 32 pól, wieża jest silniejsza bo ma dostęp do wszystkich
+bool queen(const Move&m, char board[][BOARD_SIZE]) {
+	//czy gra biały czy czarny
 
-    //czy gra biały czy czarny
+	//czy hetman/królówka należy właściwego gracza
 
-    //czy goniec należy do właściwego gracza
+	//czy nie może szachować króla przeciwnika
 
-    //czy analizowany ruch jest dozwolony dla gońca
+	//WYKORZYSTAC KOD DLA GONCA I WIEZY, KROLOWKA JEST JEDNOCZESNIE GONCEM I WIEZA
 
-    return true;
+	//Hetman może poruszać się w dowolnym kierunku (poziomo, pionowo oraz na ukos) o dowolną liczbę wolnych pól,
+
+	// jest więc jakby jednocześnie i gońcem i wieżą. Hetman bije bierkę przeciwnika, zajmując jej pole.
+
+	//czy planowany ruch jest na liście dostępnych ruchów królówki
+
+	//królówka rusza się na wszystkie strony ale tylko po liniach prostych, nie może przeskakiwać własnych figur ani pionów
+
+	return true;
+}
+
+bool rook(const Move&m, char board[][BOARD_SIZE]) {
+	//czy gra biały czy czarny
+
+	//czy wieża należy do właściwego gracza
+
+	//czy nie może szachować króla przeciwnika
+
+	//Wieża porusza się po liniach pionowych i poziomych, w dowolnym kierunku, o dowolną liczbę niezajętych pól.
+
+	// Wieża bije bierkę przeciwnika, zajmując jej pole.
+
+	//Król może poruszać się o jedno pole w dowolnym kierunku (pionowo, poziomo lub na ukos), nie może jednak wejść na pole
+	// atakowane przez bierkę przeciwnika. Jak wszystkie inne bierki, król bije bierkę przeciwnika wchodząc na pole przez
+	// nią zajmowane (z zastrzeżeniem, że nie może to pole być atakowane przez inną bierkę przeciwnika).
+	// Król może również wykonać specyficzne posunięcie, zwane roszadą.
+	//Jeśli król jest atakowany przez bierkę (bierki) przeciwnika, mówi się, że jest w szachu lub jest szachowany.
+	//OSOBNA FUNKCJA SPRAWDZAJĄCA CZY JAKAŚ BIERKA NIE ATAKUJE KRÓLA, WTEDY POPRAWNY JEST TYLKO RUCH RATUJĄCY KRÓLA
+	// W takiej sytuacji gracz ma obowiązek bronić króla (nie może wykonać innego ruchu) przez przesunięcie go na inne pole,
+	// zbicie atakującej bierki przeciwnika lub przesłonięcie ataku własną bierką.
+	// W odróżnieniu od innych bierek król nie może szachować króla przeciwnika.
+	// Na pustej szachownicy niezależnie od miejsca wieża atakuje zawsze 14 pól.
+
+
+	//czy analizowany ruch jest dopuszczalny dla wieży
+
+	//wieża nie może przeskakiwać własnych figur ani pionów
+
+	return true;
+}
+
+bool bishop(const Move&m, char board[][BOARD_SIZE]) {
+	//goniec
+	//Goniec porusza się wyłącznie po przekątnych pól, w dowolnym kierunku, o dowolną liczbę niezajętych pól.
+	// Gońce nie mogą przeskakiwać nad innymi bierkami. Goniec bije bierkę przeciwnika, zajmując jej pole.
+	//ma dostęp tylko do 32 pól, wieża jest silniejsza bo ma dostęp do wszystkich
+
+	//czy gra biały czy czarny
+
+	//czy goniec należy do właściwego gracza
+
+	//czy goniec nie może szachować króla przeciwnika
+
+	//czy analizowany ruch jest dozwolony dla gońca
+
+	return true;
 }
 
 
-bool knight(const Move&m, char board[][BOARD_SIZE], bool whites){
-    //Ruch skoczka można opisać jako krok o jedno pole w pionie lub poziomie, a następnie drugi krok na ukos,
-    // w kierunku oddalającym go od pola startowego. Niekiedy mówi się, że porusza się on „po literze L”.
-    // Przemieszcza się zawsze na pole przeciwnego koloru, pole to jest dodatkowo najbliższym polem o przeciwnym do
-    // wyjściowego kolorze, z wyłączeniem z nim sąsiadujących. Skoczek, tak jak każda inna figura, bije bierkę
-    // przeciwnika zajmując jej pole i porusza się przy biciu według tejże reguły, co i przy zwykłym ruchu.
+bool knight(const Move&m, char board[][BOARD_SIZE]) {
+	//Ruch skoczka można opisać jako krok o jedno pole w pionie lub poziomie, a następnie drugi krok na ukos,
+	// w kierunku oddalającym go od pola startowego. Niekiedy mówi się, że porusza się on „po literze L”.
+	// Przemieszcza się zawsze na pole przeciwnego koloru, pole to jest dodatkowo najbliższym polem o przeciwnym do
+	// wyjściowego kolorze, z wyłączeniem z nim sąsiadujących. Skoczek, tak jak każda inna figura, bije bierkę
+	// przeciwnika zajmując jej pole i porusza się przy biciu według tejże reguły, co i przy zwykłym ruchu.
 
-    //Skoczek jest niezwykły w porównaniu z innymi bierkami szachowymi.
-    // W przeciwieństwie do innych figur szachowych skoczek może zignorować bierki stojące mu na drodze i przeskakiwać przez nie.
-    // Poza tym jest jedyną figurą, która może rozpocząć partię (inną bierką o tej możliwości jest pion).
+	//Skoczek jest niezwykły w porównaniu z innymi bierkami szachowymi.
+	// W przeciwieństwie do innych figur szachowych skoczek może zignorować bierki stojące mu na drodze i przeskakiwać przez nie.
+	// Poza tym jest jedyną figurą, która może rozpocząć partię (inną bierką o tej możliwości jest pion).
 
-    //czy gra biały czy czarny
+	//czy gra biały czy czarny
 
-    //czy skoczek należy do właściwego gracza
+	//czy skoczek należy do właściwego gracza
 
-    //czy analizowny ruch jest dozwolony dla skoczka
+	//czy skoczek może zaszachować króla
 
-    return true;
+	//czy analizowny ruch jest dozwolony dla skoczka
+
+	return true;
 }
 
 
@@ -233,9 +268,9 @@ bool knight(const Move&m, char board[][BOARD_SIZE], bool whites){
 // - czy ruch dla danej figury jest dopuszczalny (pomijamy roszadę, ale nalezy uwzględnić, że pierwszy ruch każdego piona może być o dwie pozycje do przodu)
 bool valid(const Move& m, char board[][BOARD_SIZE], bool whites)
 {
-    //sprawdzanie jaka figura jest przewidziana do ruchu
-    //w zależności od figury uruchomiona odpowiednia funkcja weryfikująca
-    return true;
+	//sprawdzanie jaka figura jest przewidziana do ruchu
+	//w zależności od figury uruchomiona odpowiednia funkcja weryfikująca
+	return true;
 }
 
 
@@ -252,104 +287,209 @@ bool valid(const Move& m, char board[][BOARD_SIZE], bool whites)
 bool valid(Move m)
 {
 
-    if(m.fromCh < 'A' || m.fromCh >= 'A' + BOARD_SIZE){
-        return false;
-    }
-    else if(m.toCh < 'A' || m.toCh >= 'A' + BOARD_SIZE ){
-        return false;
-    }
-    else if(m.fromInt < 1 || m.fromInt > BOARD_SIZE){
-        return false;
-    }
-    else if(m.toInt < 1 || m.toInt > BOARD_SIZE){
-        return false;
-    }
-    return true;
+	if (m.fromCh < 'A' || m.fromCh >= 'A' + BOARD_SIZE) {
+		return false;
+	}
+	else if (m.toCh < 'A' || m.toCh >= 'A' + BOARD_SIZE) {
+		return false;
+	}
+	else if (m.fromInt < 1 || m.fromInt > BOARD_SIZE) {
+		return false;
+	}
+	else if (m.toInt < 1 || m.toInt > BOARD_SIZE) {
+		return false;
+	}
+	return true;
 }
 
+
+
+void errorMassage(ErrorMassage::ErrorMassageTypes msg)
+{
+	switch (msg) {
+	case ErrorMassage::badFormat:
+		clearLine(20);
+		cout << "Wrong coordinate format!" << endl << flush;
+		break;
+	case ErrorMassage::emptySpaceSelected:
+		clearLine(20);
+		cout << "No pawn on this square" << endl << flush;
+		break;
+	case ErrorMassage::wrongColorSelected:
+		clearLine(20);
+		cout << "This is not your pawn!" << endl << flush;
+		break;
+	case ErrorMassage::badPawnMovement:
+		clearLine(20);
+		cout << "This pawn cannot do such movement!" << endl << flush;
+		break;
+	case ErrorMassage::squareIsOccupied:
+		clearLine(20);
+		cout << "Your pawn already occupies this field!" << endl << flush;
+		break;
+	default:
+		clearLine(20);
+		cout << "Error!" << endl << flush;
+	}
+}
 
 
 // Sprawdza czy linia jest w postaci litera liczba litera liczba oraz zamienia litery małe na wielkie, ewentualnie usuwa także spacje np. c    1    D 3 zmiania na C1D3
 bool valid(char line[])
 {
-    int length = 0;
-    int i=0, i1 = 0;
-    removeSpaces(line);
+	int length = 0;
+	int i = 0, i1 = 0;
+	removeSpaces(line);
 
-    //length of array with characters
-    while(line[length]!='\0'){
-        length++;
-    }
+	//length of array with characters
+	while (line[length] != '\0') {
+		length++;
+	}
 
-    //replace small letters into capital letters, no verification yet as to whether it is within BOARD_SIZE
-    for(int j=0; j<length; j++){
-        if(line[j]>='a' && line[j]<='z'){
-            line[j] = toupper(line[j]);
-        }
-    }
+	//replace small letters into capital letters, no verification yet as to whether it is within BOARD_SIZE
+	for (int j = 0; j<length; j++) {
+		if (line[j] >= 'a' && line[j] <= 'z') {
+			line[j] = toupper(line[j]);
+		}
+	}
 
-    while(line[i]>='A' && line[i]<='Z'){
-        i++;
-    }
+	while (line[i] >= 'A' && line[i] <= 'Z') {
+		i++;
+	}
 
-    if(i==0){
-        cout << "Zly format wspolrzednych ruchu" << endl << flush;
-        return false;
-    }
-    else{
-        i1 = i;
-    }
+	if (i == 0) {
+		errorMassage(ErrorMassage::badFormat);
+		return false;
+	}
+	else {
+		i1 = i;
+	}
 
-    while(line[i]>='0' && line[i]<='9'){
-        i++;
-    }
+	while (line[i] >= '0' && line[i] <= '9') {
+		i++;
+	}
 
-    if(i==i1){
-        cout << "Zly format wspolrzednych ruchu" << endl << flush;
-        return false;
-    }
-    else
-    {
-        i1 = i;
-    }
+	if (i == i1) {
+		errorMassage(ErrorMassage::badFormat);
+		return false;
+	}
+	else
+	{
+		i1 = i;
+	}
 
-    while(line[i]>='A' && line[i]<='Z'){
-        i++;
-    }
+	while (line[i] >= 'A' && line[i] <= 'Z') {
+		i++;
+	}
 
-    if(i==i1){
-        cout << "Zly format wspolrzednych ruchu" << endl << flush;
-        return false;
-    }
-    else{
-        i1 = i;
-    }
+	if (i == i1) {
+		errorMassage(ErrorMassage::badFormat);
+		return false;
+	}
+	else {
+		i1 = i;
+	}
 
-    while(line[i]>='0' && line[i]<='9'){
-        i++;
-    }
+	while (line[i] >= '0' && line[i] <= '9') {
+		i++;
+	}
 
-    if(i==i1){
-        cout << "Zly format wspolrzednych ruchu" << endl << flush;
-        return false;
-    }
-    else
-    {
-        return true;
-    }
+	if (i == i1) {
+		errorMassage(ErrorMassage::badFormat);
+		return false;
+	}
+	else
+	{
+		return true;
+	}
 
 
 }
 
 
 
+
+
+
+
+// zamienia ciag znaków w postaci litera liczba litera liczba na strukturę Move
+Move readMove(const char line[])
+{
+	char fromChars[20] = { ' ' };
+	char toChars[20] = { ' ' };
+	int fromInt = 0;
+	int toInt = 0;
+	int counter = 0;
+	int i = 0;
+
+
+	//read first symbol (letters)
+	while (line[i] >= 'A' && line[i]<'Z') {
+		if (line[i] == ' ') {
+			i++;
+		}
+		fromChars[counter] = line[i];
+		counter++;
+		line++;
+	}
+
+	//read second symbol (integer)
+	while (line[i] >= '0' && line[i]<'9') {
+		if (line[i] == ' ') {
+			i++;
+		}
+		fromInt = fromInt * 10 + (line[i] - '0');
+		i++;
+	}
+
+	counter = 0;
+	//read third symbol (letters)
+	while (line[i] >= 'A' && line[i]<'Z') {
+		if (line[i] == ' ') {
+			i++;
+		}
+		toChars[counter] = line[i];
+		counter++;
+		i++;
+	}
+
+	//read fourth symbol (integer)
+	while (line[i] >= '0' && line[i]<'9') {
+		if (line[i] == ' ') {
+			i++;
+		}
+		toInt = toInt * 10 + (line[i] - '0');
+		i++;
+	}
+
+	Move move;
+	strcpy(&move.fromCh, fromChars);
+	move.fromInt = fromInt;
+	strcpy(&move.toCh, toChars);
+	move.toInt = toInt;
+
+	return move;
+}
+
+Move getMove()
+{
+	Move m;
+	string line;
+	char lineStr[1024];
+	do {
+		getline(cin, line);
+		strcpy(lineStr, line.c_str());
+	} while (!valid(lineStr) || !valid((m = readMove(lineStr))));
+	return m;
+}
+
 //jawna translacja litery ze struktury Move do współrzędnych używanych na szachownicy
 int translateLetter(char letter) {
-    int result = letter - 'A';
-    if (result >= 0 && result < BOARD_SIZE) {
-        return result;
-    }
-    return -1;
+	int result = letter - 'A';
+	if (result >= 0 && result < BOARD_SIZE) {
+		return result;
+	}
+	return -1;
 
 }
 
@@ -358,98 +498,25 @@ int translateLetter(char letter) {
 //jawna transalcja cyfry ze struktury Move do współrzędnych używanych na szachownicy
 int translateInt(int number) {
 
-    if (number < 1 && number > BOARD_SIZE) {
-        cout <<  "Nie ma takiego numeru wiersza na szachownicy!" << endl << flush;
-        return -1;
-    }
-    //change numbering of rows - in MOVE struct there was numbering from 1 to BOARD_SIZE
-    //we change it initially to numbering from 0 to BOARD_SIZE - 1
-    //reverse numbers of rows to correctly address the array board
-    return BOARD_SIZE - number;
-}
-
-
-
-// zamienia ciag znaków w postaci litera liczba litera liczba na strukturę Move
-Move readMove(const char line[])
-{
-    char fromChars[20] = {' '};
-    char toChars[20] = {' '};
-    int fromInt = 0;
-    int toInt = 0;
-    int counter = 0;
-    int i = 0;
-
-
-    //read first symbol (letters)
-    while(line[i]>='A' && line[i]<'Z'){
-        if(line[i]==' '){
-            i++;
-        }
-        fromChars[counter] = line[i];
-        counter++;
-        line++;
-    }
-
-    //read second symbol (integer)
-    while(line[i]>='0' && line[i]<'9'){
-        if(line[i]==' '){
-            i++;
-        }
-        fromInt = fromInt*10 + (line[i]-'0');
-        i++;
-    }
-
-    counter = 0;
-    //read third symbol (letters)
-    while(line[i]>='A' && line[i]<'Z'){
-        if(line[i]==' '){
-            i++;
-        }
-        toChars[counter] = line[i];
-        counter++;
-        i++;
-    }
-
-    //read fourth symbol (integer)
-    while(line[i]>='0' && line[i]<'9'){
-        if(line[i]==' '){
-            i++;
-        }
-        toInt = toInt*10 + (line[i]-'0');
-        i++;
-    }
-
-    Move move;
-    strcpy(&move.fromCh, fromChars);
-    move.fromInt = fromInt;
-    strcpy(&move.toCh, toChars);
-    move.toInt = toInt;
-
-    return move;
-}
-
-Move getMove()
-{
-    Move m;
-    string line;
-    char lineStr[1024];
-    do {
-        getline(cin, line);
-        strcpy(lineStr, line.c_str());
-    } while (!valid(lineStr) || !valid((m = readMove(lineStr))));
-    return m;
+	if (number < 1 && number > BOARD_SIZE) {
+		cout << "Nie ma takiego numeru wiersza na szachownicy!" << endl << flush;
+		return -1;
+	}
+	//change numbering of rows - in MOVE struct there was numbering from 1 to BOARD_SIZE
+	//we change it initially to numbering from 0 to BOARD_SIZE - 1
+	//reverse numbers of rows to correctly address the array board
+	return BOARD_SIZE - number;
 }
 
 void makeMove(Move m, char board[][BOARD_SIZE])
 {
-    int columnFrom = translateLetter(m.fromCh);
-    int columnTo = translateLetter(m.toCh);
-    int rowFrom = translateInt(m.fromInt);
-    int rowTo = translateInt(m.toInt);
-    char figure = board[rowFrom][columnFrom];
-    board[rowFrom][columnFrom] = ' ';
-    board[rowTo][columnTo] = figure;
+	int columnFrom = translateLetter(m.fromCh);
+	int columnTo = translateLetter(m.toCh);
+	int rowFrom = translateInt(m.fromInt);
+	int rowTo = translateInt(m.toInt);
+	char figure = board[rowFrom][columnFrom];
+	board[rowFrom][columnFrom] = ' ';
+	board[rowTo][columnTo] = figure;
 }
 
 
@@ -457,55 +524,55 @@ void makeMove(Move m, char board[][BOARD_SIZE])
 // and reads its contents, and displays on the screen
 void displayBoard(char board[][BOARD_SIZE])
 {
-    //variable letter is used in a loop to display letters representing columns
-    //the loop automatically displays chars, simpler loops returned intergers instead of chars
+	//variable letter is used in a loop to display letters representing columns
+	//the loop automatically displays chars, simpler loops returned intergers instead of chars
 
-    char letter;
-    int i, j;
-    char k;
+	char letter;
+	int i, j;
+	char k;
 
-    //row with letters that reprezenting headers of columns
-    cout << "   ";
-    for(letter = 'A'; letter < 'A'+ BOARD_SIZE; letter++)
-        cout << "   " <<  letter;
-    cout << "      \n";
+	//row with letters that reprezenting headers of columns
+	cout << "   ";
+	for (letter = 'A'; letter < 'A' + BOARD_SIZE; letter++)
+		cout << "   " << letter;
+	cout << "      \n";
 
-    //row with a delimited in a chessboard  "    +---+---+---+---+---+---+---+---+   \n";
-    cout << "    ";
-    for( i='A'; i<'A'+ BOARD_SIZE; i++){
-        cout << "+---";
-    }
-    cout << "+   \n";
+	//row with a delimited in a chessboard  "    +---+---+---+---+---+---+---+---+   \n";
+	cout << "    ";
+	for (i = 'A'; i<'A' + BOARD_SIZE; i++) {
+		cout << "+---";
+	}
+	cout << "+   \n";
 
-    //now we take the array that keeps actual positions of figures and display it on the chessboard
+	//now we take the array that keeps actual positions of figures and display it on the chessboard
 
-    for( i=0; i < BOARD_SIZE; i++) {
+	for (i = 0; i < BOARD_SIZE; i++) {
 
-        cout << " " << BOARD_SIZE - i << " ";
+		cout << " " << BOARD_SIZE - i << " ";
 
-        for (j = 0; j < BOARD_SIZE; j++) {
-            cout << " " << "|" << " " << board[i][j];
-        }
-        cout << " " << "|" << " " << BOARD_SIZE - i << " ";
-        cout << "\n";
+		for (j = 0; j < BOARD_SIZE; j++) {
+			cout << " " << "|" << " " << board[i][j];
+		}
+		cout << " " << "|" << " " << BOARD_SIZE - i << " ";
+		cout << "\n";
 
 
-        //now we delimit each row with figures with a delimiter "    +---+---+---+---+---+---+---+---+   \n";
-        cout << "    ";
-        for(k='A'; k<'A'+ BOARD_SIZE; k++){
-            cout << "+---";
-        }
-        cout << "+   \n";
+		//now we delimit each row with figures with a delimiter "    +---+---+---+---+---+---+---+---+   \n";
+		cout << "    ";
+		for (k = 'A'; k<'A' + BOARD_SIZE; k++) {
+			cout << "+---";
+		}
+		cout << "+   \n";
 
-    }
+	}
 
-    //finally the bottom letters
+	//finally the bottom letters
 
-    //row with letters that reprezenting headers of columns
-    cout << "   ";
-    for(letter = 'A'; letter < 'A'+ BOARD_SIZE; letter++)
-        cout << "   " <<  letter;
-    cout << "      \n";
+	//row with letters that reprezenting headers of columns
+	cout << "   ";
+	for (letter = 'A'; letter < 'A' + BOARD_SIZE; letter++)
+		cout << "   " << letter;
+	cout << "      \n\n";
 
 }
 
@@ -514,26 +581,25 @@ void initBoard(char board[][BOARD_SIZE])
 {
 	clearScreen();
 
-    int i, j;
-    for (i = 0; i < BOARD_SIZE; i++) {
-        for (j = 0; j < BOARD_SIZE; j++) {
-            board[i][j] = startup[i][j]; //setup starting position
-        }
-    }
+	int i, j;
+	for (i = 0; i < BOARD_SIZE; i++) {
+		for (j = 0; j < BOARD_SIZE; j++) {
+			board[i][j] = startup[i][j]; //setup starting position
+		}
+	}
 }
 
 
-void doMove(char board[][BOARD_SIZE])
+void doMove(char board[][BOARD_SIZE], bool whites)
 {
-    cout << "Your move:" << endl << flush;
-    Move m = getMove();
-
-    while (!valid(m)) {
-        clearLine(20);
-        cout << "Error. Try again:" << endl << flush;
-        m = getMove();
-    }
-    makeMove(m, board);
+	cout << "Your move:" << endl << flush;
+	Move m;
+	do {
+		do {
+			m = getMove();
+		} while (!valid(m));
+	} while (!valid(m, board, whites));
+	makeMove(m, board);
 
 }
 
@@ -542,14 +608,15 @@ bool endOfGame(char board[][BOARD_SIZE])
 	return false;
 }
 
-int main() 
+int main()
 {
 	initBoard(board);
-
+	bool whites = true;
 	do {
 		displayBoard(board);
-		doMove(board);
-        !white;
-    } while (!endOfGame(board));
+		doMove(board, whites);
+		whites != whites;
+		clearScreen();
+	} while (!endOfGame(board));
 
 }
