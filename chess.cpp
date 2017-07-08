@@ -108,8 +108,6 @@ bool pawn(const Move &m, char board[][BOARD_SIZE], bool whites){
 
     //czy pionek należy do odpowiedniego gracza
 
-    //czy pionek nie może szachować króla przeciwnika
-
     //czy pionek wykonuje swój pierwszy ruch w grze, wtedy moze iść do przodu o 2 pola lub 1 pole - do przodu lub po skosie
 
     //jeżeli pionek już nie jest na swojej pozycji startowej to rusza się o 1 pole
@@ -127,8 +125,6 @@ bool pPawn(const Move &m, char board[][BOARD_SIZE], bool whites){
 
     //czy pionek nalezy do wlasciwego gracza
 
-    //czy pionek nie może szachować króla przeciwnika
-
     //pionek może robić ruch tylko o 1 pole ale może chodzić też do tyłu, nie może przeskakiwać własnych figur ani pionów
 
     return true;
@@ -140,10 +136,8 @@ bool king(const Move&m, char board[][BOARD_SIZE], bool whites){
 
     //czy król należy do właściwego gracza
 
-    //czy pionek nie może szachować króla przeciwnika
-
     //czy analizowany ruch jest dostępny dla króla
-
+    
     //król może się poruszać o 1 pole, byle nie wyjść za szachownicę, dowolny kierunek, nie może przeskakiwać własnych pionów ani figur
 
     return true;
@@ -153,8 +147,6 @@ bool queen(const Move&m, char board[][BOARD_SIZE], bool whites){
     //czy gra biały czy czarny
 
     //czy hetman/królówka należy właściwego gracza
-
-    //czy nie może szachować króla przeciwnika
 
     //WYKORZYSTAC KOD DLA GONCA I WIEZY, KROLOWKA JEST JEDNOCZESNIE GONCEM I WIEZA
 
@@ -173,8 +165,6 @@ bool rook(const Move&m, char board[][BOARD_SIZE], bool whites){
     //czy gra biały czy czarny
 
     //czy wieża należy do właściwego gracza
-
-    //czy nie może szachować króla przeciwnika
 
     //Wieża porusza się po liniach pionowych i poziomych, w dowolnym kierunku, o dowolną liczbę niezajętych pól.
 
@@ -209,8 +199,6 @@ bool bishop(const Move&m, char board[][BOARD_SIZE], bool whites){
 
     //czy goniec należy do właściwego gracza
 
-    //czy goniec nie może szachować króla przeciwnika
-
     //czy analizowany ruch jest dozwolony dla gońca
 
     return true;
@@ -231,8 +219,6 @@ bool knight(const Move&m, char board[][BOARD_SIZE], bool whites){
     //czy gra biały czy czarny
 
     //czy skoczek należy do właściwego gracza
-
-    //czy skoczek może zaszachować króla
 
     //czy analizowny ruch jest dozwolony dla skoczka
 
