@@ -1,6 +1,6 @@
 ﻿//     A   B   C   D   E   F   G   H
 //   +---+---+---+---+---+---+---+---+
-// 8 | r | b | n | q | k | n | b | r | 8
+// 8 | r | n | b | q | k | b | n | r | 8
 //   +---+---+---+---+---+---+---+---+
 // 7 | p | p | p | p | p | p | p | p | 7
 //   +---+---+---+---+---+---+---+---+
@@ -14,7 +14,7 @@
 //   +---+---+---+---+---+---+---+---+
 // 2 | P | P | P | P | P | P | P | P | 2
 //   +---+---+---+---+---+---+---+---+
-// 1 | R | B | N | Q | K | N | B | R | 1
+// 1 | R | N | B | Q | K | B | N | R | 1
 //   +---+---+---+---+---+---+---+---+
 //     A   B   C   D   E   F   G   H
 
@@ -49,7 +49,7 @@ const int BOARD_SIZE = 8;
 //GLOBAL VARIABLES ---------------------------------------------------------------------------------
 
 char board[BOARD_SIZE][BOARD_SIZE] = { ' ' };
-const char startup[8][8] = { 'r', 'b', 'n', 'q', 'k', 'n', 'b', 'r', 'p', 'p','p','p','p','p','p', 'p', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'R', 'B', 'N', 'Q', 'K', 'N', 'B', 'R' };
+const char startup[8][8] = { 'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r', 'p', 'p','p','p','p','p','p', 'p', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R' };
 
 struct Move {
 	char fromCh;
@@ -176,7 +176,7 @@ void errorMessage(ErrorMessage::ErrorMessageTypes msg)
 bool isPieceSelected(const Move &m, char board[][BOARD_SIZE], bool whites) {
 
 	char piece = board[translateInt(m.fromInt)][translateLetter(m.fromCh)];
-	
+
 	if (piece >= 'a' && piece <= 'z') {
 		if (whites == true) {
 			errorMessage(ErrorMessage::wrongColorSelected);
@@ -196,7 +196,7 @@ bool isPieceSelected(const Move &m, char board[][BOARD_SIZE], bool whites) {
 		return false;
 	}
 
-	
+
 	return true;
 }
 
@@ -228,6 +228,22 @@ bool valid(int x, int y) {
 	return true;
 }
 
+bool valid(Move m) {
+
+	if (m.fromCh < 'A' || m.fromCh >= 'A' + BOARD_SIZE) {
+		return false;
+	}
+	else if (m.toCh < 'A' || m.toCh >= 'A' + BOARD_SIZE) {
+		return false;
+	}
+	else if (m.fromInt < 1 || m.fromInt > BOARD_SIZE) {
+		return false;
+	}
+	else if (m.toInt < 1 || m.toInt > BOARD_SIZE) {
+		return false;
+	}
+	return true;
+}
 
 
 bool pawn(const Move &m, char board[][BOARD_SIZE]) {
@@ -262,7 +278,7 @@ bool pPawn(const Move &m, char board[][BOARD_SIZE]) {
 	return true;
 }
 
-bool king(const Move&m, char board[][BOARD_SIZE]) {
+bool king(const Move &m, char board[][BOARD_SIZE]) {
 
 	//czy gra biały czy czarny
 
@@ -277,75 +293,95 @@ bool king(const Move&m, char board[][BOARD_SIZE]) {
 	return true;
 }
 
-bool queen(const Move&m, char board[][BOARD_SIZE]) {
-	//czy gra biały czy czarny
-
-	//czy hetman/królówka należy właściwego gracza
-
-	//czy nie może szachować króla przeciwnika
-
-	//WYKORZYSTAC KOD DLA GONCA I WIEZY, KROLOWKA JEST JEDNOCZESNIE GONCEM I WIEZA
-
-	//Hetman może poruszać się w dowolnym kierunku (poziomo, pionowo oraz na ukos) o dowolną liczbę wolnych pól,
-
-	// jest więc jakby jednocześnie i gońcem i wieżą. Hetman bije bierkę przeciwnika, zajmując jej pole.
-
-	//czy planowany ruch jest na liście dostępnych ruchów królówki
-
-	//królówka rusza się na wszystkie strony ale tylko po liniach prostych, nie może przeskakiwać własnych figur ani pionów
-
-	return true;
-}
-
-bool rook(const Move&m, char board[][BOARD_SIZE]) {
-	//czy gra biały czy czarny
-
-	//czy wieża należy do właściwego gracza
-
-	//czy nie może szachować króla przeciwnika
-
-	//Wieża porusza się po liniach pionowych i poziomych, w dowolnym kierunku, o dowolną liczbę niezajętych pól.
-
-	// Wieża bije bierkę przeciwnika, zajmując jej pole.
-
-	//Król może poruszać się o jedno pole w dowolnym kierunku (pionowo, poziomo lub na ukos), nie może jednak wejść na pole
-	// atakowane przez bierkę przeciwnika. Jak wszystkie inne bierki, król bije bierkę przeciwnika wchodząc na pole przez
-	// nią zajmowane (z zastrzeżeniem, że nie może to pole być atakowane przez inną bierkę przeciwnika).
-	// Król może również wykonać specyficzne posunięcie, zwane roszadą.
-	//Jeśli król jest atakowany przez bierkę (bierki) przeciwnika, mówi się, że jest w szachu lub jest szachowany.
-	//OSOBNA FUNKCJA SPRAWDZAJĄCA CZY JAKAŚ BIERKA NIE ATAKUJE KRÓLA, WTEDY POPRAWNY JEST TYLKO RUCH RATUJĄCY KRÓLA
-	// W takiej sytuacji gracz ma obowiązek bronić króla (nie może wykonać innego ruchu) przez przesunięcie go na inne pole,
-	// zbicie atakującej bierki przeciwnika lub przesłonięcie ataku własną bierką.
-	// W odróżnieniu od innych bierek król nie może szachować króla przeciwnika.
-	// Na pustej szachownicy niezależnie od miejsca wieża atakuje zawsze 14 pól.
 
 
-	//czy analizowany ruch jest dopuszczalny dla wieży
+bool rook(const Move &m, char board[][BOARD_SIZE]) {
 
-	//wieża nie może przeskakiwać własnych figur ani pionów
+	int char_diff = abs(m.toCh - m.fromCh); 
+	int int_diff = abs(m.toInt - m.fromInt); 
+
+	if ( m.fromCh != m.toCh && m.fromInt != m.toInt )
+		return false;
+	
+	if (m.fromCh > m.toCh) {
+		for (int i = 1; i < char_diff; ++i) {
+			if ( board[translateInt(m.fromInt)][translateLetter(m.fromCh) - i] != ' ' )
+				return false;
+		}
+	}
+	if (m.fromCh < m.toCh) {
+		for (int i = 1; i < char_diff; ++i){
+			if ( board[translateInt(m.fromInt)][translateLetter(m.fromCh) + i] != ' ' )
+				return false;
+		}
+	}
+	if (m.fromInt > m.toInt) {
+		for (int i = 1; i < int_diff; ++i) {
+			if ( board[translateInt(m.fromInt) + i][translateLetter(m.fromCh)] != ' ' )
+				return false;
+		}
+	}
+	if (m.fromInt < m.toInt) {
+		for (int i = 1; i < int_diff; ++i) {
+			cout << (board[translateInt(m.fromInt) + i][translateLetter(m.fromCh)] != ' ' )<< endl;
+			if ( board[translateInt(m.fromInt) - i][translateLetter(m.fromCh)] != ' ' )
+				return false;
+		}
+	}
 
 	return true;
 }
 
-bool bishop(const Move&m, char board[][BOARD_SIZE]) {
-	//goniec
-	//Goniec porusza się wyłącznie po przekątnych pól, w dowolnym kierunku, o dowolną liczbę niezajętych pól.
-	// Gońce nie mogą przeskakiwać nad innymi bierkami. Goniec bije bierkę przeciwnika, zajmując jej pole.
-	//ma dostęp tylko do 32 pól, wieża jest silniejsza bo ma dostęp do wszystkich
+bool bishop(const Move& m, char board[][BOARD_SIZE]) {
 
-	//czy gra biały czy czarny
+	int char_diff = (m.toCh - m.fromCh); //calculates the vertical shift(absolute value)
+	int int_diff = (m.toInt - m.fromInt); //calculates the horizontal shift(absolute value)
 
-	//czy goniec należy do właściwego gracza
+										  //basically in case of bishop the absolute value of vertical and horizontal shifts must be equal(diagonal move)
+	if (abs(char_diff) != abs(int_diff))
+		return false;
 
-	//czy goniec nie może szachować króla przeciwnika
+	else if (int_diff>0 && char_diff>0) {
+		for (int i = 1; i<abs(char_diff); i++) {
+			if (board[translateInt(m.fromInt) - i][translateLetter(m.fromCh) + i] != ' ')
+				return false;
+		}
+	}
 
-	//czy analizowany ruch jest dozwolony dla gońca
+	else if (int_diff<0 && char_diff<0) {
+		for (int i = 1; i<abs(char_diff); i++) {
+			if (board[translateInt(m.fromInt) + i][translateLetter(m.fromCh) - i] != ' ')
+				return false;
+		}
+	}
+
+	else if (int_diff<0 && char_diff>0) {
+		for (int i = 1; i<abs(char_diff); i++) {
+			if (board[translateInt(m.fromInt) + i][translateLetter(m.fromCh) + i] != ' ')
+				return false;
+		}
+	}
+
+	else if (int_diff>0 && char_diff<0) {
+		for (int i = 1; i<abs(char_diff); i++) {
+			if (board[translateInt(m.fromInt) - i][translateLetter(m.fromCh) - i] != ' ')
+				return false;
+		}
+	}
 
 	return true;
 }
 
 
-bool knight(const Move&m, char board[][BOARD_SIZE]) {
+bool queen(const Move &m, char board[][BOARD_SIZE]) {
+	if (rook(m, board) || bishop(m, board))
+		return true;
+	else
+		return false;
+}
+
+
+bool knight(const Move &m, char board[][BOARD_SIZE]) {
 	//Ruch skoczka można opisać jako krok o jedno pole w pionie lub poziomie, a następnie drugi krok na ukos,
 	// w kierunku oddalającym go od pola startowego. Niekiedy mówi się, że porusza się on „po literze L”.
 	// Przemieszcza się zawsze na pole przeciwnego koloru, pole to jest dodatkowo najbliższym polem o przeciwnym do
@@ -356,67 +392,59 @@ bool knight(const Move&m, char board[][BOARD_SIZE]) {
 	// W przeciwieństwie do innych figur szachowych skoczek może zignorować bierki stojące mu na drodze i przeskakiwać przez nie.
 	// Poza tym jest jedyną figurą, która może rozpocząć partię (inną bierką o tej możliwości jest pion).
 
-	//czy gra biały czy czarny
-
-	//czy skoczek należy do właściwego gracza
-
-	//czy skoczek może zaszachować króla
-
-	//czy analizowny ruch jest dozwolony dla skoczka
-
 
 
 	if (m.toCh == m.fromCh + 2 && m.toInt == m.fromInt + 1) {
-		if (valid(m.fromCh + 2, m.fromInt + 1)) {
+		if (valid(translateLetter(m.fromCh) + 2, translateInt(m.fromInt) + 1)) {
 			return true;
 		}
 		return false;
 	}
 
 	else if (m.toCh == m.fromCh + 2 && m.toInt == m.fromInt - 1) {
-		if (valid(m.fromCh + 2, m.fromInt - 1)) {
+		if (valid(translateLetter(m.fromCh) + 2, translateInt(m.fromInt) - 1)) {
 			return true;
 		}
 		return false;
 	}
 
 	else if (m.toCh == m.fromCh - 2 && m.toInt == m.fromInt + 1) {
-		if (valid(m.fromCh - 2, m.fromInt + 1)) {
+		if (valid(translateLetter(m.fromCh) - 2, translateInt(m.fromInt) + 1)) {
 			return true;
 		}
 		return false;
 	}
 
-	else if (m.toCh == m.fromCh + 2 && m.toInt == m.fromInt - 1) {
-		if (valid(m.fromCh + 2, m.fromInt - 1)) {
+	else if (m.toCh == m.fromCh - 2 && m.toInt == m.fromInt - 1) {
+		if (valid(translateLetter(m.fromCh) - 2, translateInt(m.fromInt) - 1)) {
 			return true;
 		}
 		return false;
 	}
 
 	else if (m.toCh == m.fromCh + 1 && m.toInt == m.fromInt - 2) {
-		if (valid(m.fromCh + 1, m.fromInt - 2)) {
+		if (valid(translateLetter(m.fromCh) + 1, translateInt(m.fromInt) - 2)) {
 			return true;
 		}
 		return false;
 	}
 
 	else if (m.toCh == m.fromCh + 1 && m.toInt == m.fromInt + 2) {
-		if (valid(m.fromCh + 1, m.fromInt + 2)) {
+		if (valid(translateLetter(m.fromCh) + 1, translateInt(m.fromInt) + 2)) {
 			return true;
 		}
 		return false;
 	}
 
 	else if (m.toCh == m.fromCh - 1 && m.toInt == m.fromInt - 2) {
-		if (valid(m.fromCh - 1, m.fromInt - 2)) {
+		if (valid(translateLetter(m.fromCh) - 1, translateInt(m.fromInt) - 2)) {
 			return true;
 		}
 		return false;
 	}
 
 	else if (m.toCh == m.fromCh - 1 && m.toInt == m.fromInt + 2) {
-		if (valid(m.fromCh - 1, m.fromInt + 2)) {
+		if (valid(translateLetter(m.fromCh) - 1, translateInt(m.fromInt) + 2)) {
 			return true;
 		}
 		return false;
@@ -436,9 +464,9 @@ bool knight(const Move&m, char board[][BOARD_SIZE]) {
 
 bool valid(const Move& m, char board[][BOARD_SIZE], bool whites)
 {
-	char piece = board[translateLetter(m.fromCh)][translateInt(m.fromInt)];
+	char piece = board[translateInt(m.fromInt)][translateLetter(m.fromCh)];
 
-	if ( !(isPieceSelected(m, board, whites)) ) {
+	if (!(isPieceSelected(m, board, whites))) {
 		return false;
 	}
 
@@ -447,62 +475,45 @@ bool valid(const Move& m, char board[][BOARD_SIZE], bool whites)
 
 	switch (tolower(piece)) {
 
-	case 'P':  
-		if ( !(pawn(m, board)) )
+	case 'p':
+		if (!(pawn(m, board))) {
+			errorMessage(ErrorMessage::badPieceMovement);
 			return false;
+		}
 		break;
-	case 'r': 
-		if ( !(rook(m, board)) )
+	case 'r':
+		if (!(rook(m, board))) {
+			errorMessage(ErrorMessage::badPieceMovement);
 			return false;
+		}
 		break;
-	case 'n': 
-		if ( !(knight(m, board)) )
+	case 'n':
+		if (!(knight(m, board))) {
+			errorMessage(ErrorMessage::badPieceMovement);
 			return false;
+		}
 		break;
-	case 'b': 
-		if ( !(bishop(m, board)) )
+	case 'b':
+		if (!(bishop(m, board))) {
+			errorMessage(ErrorMessage::badPieceMovement);
 			return false;
+		}
 		break;
-	case 'q': 
-		if ( !(queen(m, board)) )
+	case 'q':
+		if (!(queen(m, board))) {
+			errorMessage(ErrorMessage::badPieceMovement);
 			return false;
+		}
 		break;
-	case 'k': 
-		if ( !(king(m, board)) )
+	case 'k':
+		if (!(king(m, board))) {
+			errorMessage(ErrorMessage::badPieceMovement);
 			return false;
+		}
 		break;
 
 	}
 
-	return true;
-}
-
-
-
-
-//function validates the move whether it is within the chessboard
-//letter >= A i <= H and number >= 1 <= 8
-//and returns proper bool value
-//struct Move {
-//char fromCh;
-//int fromInt;
-//char toCh;
-//int toInt; }
-bool valid(Move m)
-{
-
-	if (m.fromCh < 'A' || m.fromCh >= 'A' + BOARD_SIZE) {
-		return false;
-	}
-	else if (m.toCh < 'A' || m.toCh >= 'A' + BOARD_SIZE) {
-		return false;
-	}
-	else if (m.fromInt < 1 || m.fromInt > BOARD_SIZE) {
-		return false;
-	}
-	else if (m.toInt < 1 || m.toInt > BOARD_SIZE) {
-		return false;
-	}
 	return true;
 }
 
@@ -582,10 +593,6 @@ bool valid(char line[])
 
 
 }
-
-
-
-
 
 
 
