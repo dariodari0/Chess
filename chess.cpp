@@ -21,7 +21,7 @@
 
 //LIBRARIES --------------------------------------------------------------------------------------
 // important for VS
-#include "stdafx.h"
+//#include "stdafx.h"
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -50,12 +50,21 @@ const int BOARD_SIZE = 8;
 
 char board[BOARD_SIZE][BOARD_SIZE] = { ' ' };
 const char startup[8][8] = { 'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r', 'p', 'p','p','p','p','p','p', 'p', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R' };
+bool whites;
 
 struct Move {
 	char fromCh;
 	int fromInt;
 	char toCh;
 	int toInt;
+
+	void Fill(char fromCh, int fromInt, char toCh, int toInt) {
+		this->fromCh = fromCh;
+		this->fromInt = fromInt;
+		this->toCh = toCh;
+		this->toInt = toInt;
+	}
+
 };
 
 //GLOBAL FUNCTIONS ---------------------------------------------------------------------------------
@@ -113,7 +122,7 @@ void removeSpaces(char* s)
 	} while (*s2++);
 }
 
-//jawna translacja litery ze struktury Move do współrzędnych używanych na szachownicy
+//jawna translacja litery ze struktury Move do wsp�rz�dnych u�ywanych na szachownicy
 int translateLetter(char letter) {
 	int result = letter - 'A';
 	if (result >= 0 && result < BOARD_SIZE) {
@@ -124,8 +133,7 @@ int translateLetter(char letter) {
 }
 
 
-
-//jawna transalcja cyfry ze struktury Move do współrzędnych używanych na szachownicy
+//jawna transalcja cyfry ze struktury Move do wsp�rz�dnych u�ywanych na szachownicy
 int translateInt(int number) {
 
 	if (number < 1 && number > BOARD_SIZE) {
@@ -136,6 +144,14 @@ int translateInt(int number) {
 	//we change it initially to numbering from 0 to BOARD_SIZE - 1
 	//reverse numbers of rows to correctly address the array board
 	return BOARD_SIZE - number;
+}
+
+int inverseTranslateInt(int x) {
+	return BOARD_SIZE - x;
+}
+
+char inverseTranslateCh(int x) {
+	return x + 'A';
 }
 
 
@@ -246,85 +262,217 @@ bool valid(Move m) {
 }
 
 
+//figure functions declarations
+bool pawn(const Move &m, char board[][BOARD_SIZE]);
+bool pPawn(const Move &m, char board[][BOARD_SIZE]);
+bool king(const Move &m, char board[][BOARD_SIZE]);
+bool rook(const Move &m, char board[][BOARD_SIZE]);
+bool bishop(const Move &m, char board[][BOARD_SIZE]);
+bool queen(const Move &m, char board[][BOARD_SIZE]);
+bool knight(const Move &m, char board[][BOARD_SIZE]);
+
 bool pawn(const Move &m, char board[][BOARD_SIZE]) {
 
-	//czy gra biały czy czarny
+	//czy gra bia�y czy czarny
 
-	//czy pionek należy do odpowiedniego gracza
+	//czy pionek nale�y do odpowiedniego gracza
 
-	//czy pionek nie może szachować króla przeciwnika
+	//czy pionek nie mo�e szachowa� kr�la przeciwnika
 
-	//czy pionek wykonuje swój pierwszy ruch w grze, wtedy moze iść do przodu o 2 pola lub 1 pole - do przodu lub po skosie
+	//czy pionek wykonuje sw�j pierwszy ruch w grze, wtedy moze i�� do przodu o 2 pola lub 1 pole - do przodu lub po skosie
 
-	//jeżeli pionek już nie jest na swojej pozycji startowej to rusza się o 1 pole
+	//je�eli pionek ju� nie jest na swojej pozycji startowej to rusza si� o 1 pole
 
-	//jeżeli pionek doszedł do końca szachownicy to staje się pp albo PP - pionkiem który może chodzić do tyłu
+	//je�eli pionek doszed� do ko�ca szachownicy to staje si� pp albo PP - pionkiem kt�ry mo�e chodzi� do ty�u
 
-	//pionek nie może przeskakiwać własnych figur ani pionów
+	//pionek nie mo�e przeskakiwa� w�asnych figur ani pion�w
 
 	return true;
 }
 
 bool pPawn(const Move &m, char board[][BOARD_SIZE]) {
 
+
+
 	//czy gra bialy czy czarny
 
 	//czy pionek nalezy do wlasciwego gracza
 
-	//czy pionek nie może szachować króla przeciwnika
+	//czy pionek nie mo�e szachowa� kr�la przeciwnika
 
-	//pionek może robić ruch tylko o 1 pole ale może chodzić też do tyłu, nie może przeskakiwać własnych figur ani pionów
+	//pionek mo�e robi� ruch tylko o 1 pole ale mo�e chodzi� te� do ty�u, nie mo�e przeskakiwa� w�asnych figur ani pion�w
 
 	return true;
+}
+bool is_Deadlocked(const Move &m, char board[][BOARD_SIZE], bool whites) {
+	//this function checks if the king is deadlocked(to be used in king's move validation[king])
+
+
+	// from now on we'll be checking possible moves according to king's destiny position
+	int toInt = m.toInt;
+	char toCh = m.toCh;
+
+	Move m_Pawn;
+	Move m_pPawn;
+	Move m_King;
+	Move m_Rook;
+	Move m_Bishop;
+	Move m_Queen;
+	Move m_Knight;
+
+	char figure;
+
+	for (int i = 0; i<BOARD_SIZE; i++) { //setting up the Move structures for each enemy figure
+		for (int j = 0; j<BOARD_SIZE; j++) {
+			figure = board[i][j];
+
+			if (whites) {
+				if (figure == 'p') m_Pawn.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
+				if (figure == 'p') m_pPawn.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
+				if (figure == 'k') m_King.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
+				if (figure == 'r') m_Rook.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
+				if (figure == 'b') m_Bishop.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
+				if (figure == 'q') m_Queen.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
+				if (figure == 'n') m_Knight.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
+			}
+
+			if (!whites) {
+				if (figure == 'P') m_Pawn.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
+				if (figure == 'P') m_pPawn.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
+				if (figure == 'K') m_King.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
+				if (figure == 'R') m_Rook.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
+				if (figure == 'B') m_Bishop.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
+				if (figure == 'Q') m_Queen.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
+				if (figure == 'N') m_Knight.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
+			}
+
+		}
+	}
+
+	//returns true if any figure can move into kings destiny position->this means king is deadlocked
+	if (pawn(m_Pawn, board))
+		return true;
+	else if (pPawn(m_pPawn, board))
+		return true;
+	else if (king(m_King, board))
+		return true;
+	else if (rook(m_Rook, board))
+		return true;
+	else if (bishop(m_Bishop, board))
+		return true;
+	else if (queen(m_Queen, board))
+		return true;
+	else if (knight(m_Knight, board))
+		return true;
+
+	return false;
 }
 
 bool king(const Move &m, char board[][BOARD_SIZE]) {
 
-	//czy gra biały czy czarny
+	//czy gra bia�y czy czarny
 
-	//czy król należy do właściwego gracza
+	//czy kr�l nale�y do w�a�ciwego gracza
 
-	//czy pionek nie może szachować króla przeciwnika
+	//czy pionek nie mo�e szachowa� kr�la przeciwnika
 
-	//czy analizowany ruch jest dostępny dla króla
+	//czy analizowany ruch jest dost�pny dla kr�la
 
-	//król może się poruszać o 1 pole, byle nie wyjść za szachownicę, dowolny kierunek, nie może przeskakiwać własnych pionów ani figur
+	//kr�l mo�e si� porusza� o 1 pole, byle nie wyj�� za szachownic�, dowolny kierunek, nie mo�e przeskakiwa� w�asnych pion�w ani figur
 
-	return true;
+
+	//step one- checking if the move is within king's range
+	if (m.toCh == m.fromCh + 1 && m.toInt == m.fromInt) {
+		if (valid(translateLetter(m.fromCh) + 1, translateInt(m.fromInt))) {
+			if (!is_Deadlocked(m, board, whites)) return true; //step two- checking if king is deadlocked
+		}
+		return false;
+	}
+
+	if (m.toCh == m.fromCh  && m.toInt == m.fromInt + 1) {
+		if (valid(translateLetter(m.fromCh), translateInt(m.fromInt) + 1)) {
+			if (!is_Deadlocked(m, board, whites)) return true;
+		}
+		return false;
+	}
+
+	if (m.toCh == m.fromCh + 1 && m.toInt == m.fromInt + 1) {
+		if (valid(translateLetter(m.fromCh) + 1, translateInt(m.fromInt) + 1)) {
+			if (!is_Deadlocked(m, board, whites)) return true;
+		}
+		return false;
+	}
+
+	if (m.toCh == m.fromCh - 1 && m.toInt == m.fromInt) {
+		if (valid(translateLetter(m.fromCh) - 1, translateInt(m.fromInt))) {
+			if (!is_Deadlocked(m, board, whites)) return true;
+		}
+		return false;
+	}
+
+	if (m.toCh == m.fromCh  && m.toInt == m.fromInt - 1) {
+		if (valid(translateLetter(m.fromCh), translateInt(m.fromInt) - 1)) {
+			if (!is_Deadlocked(m, board, whites)) return true;
+		}
+		return false;
+	}
+
+	if (m.toCh == m.fromCh - 1 && m.toInt == m.fromInt - 1) {
+		if (valid(translateLetter(m.fromCh) - 1, translateInt(m.fromInt) - 1)) {
+			if (!is_Deadlocked(m, board, whites)) return true;
+		}
+		return false;
+	}
+
+	if (m.toCh == m.fromCh - 1 && m.toInt == m.fromInt + 1) {
+		if (valid(translateLetter(m.fromCh) - 1, translateInt(m.fromInt) + 1)) {
+			if (!is_Deadlocked(m, board, whites)) return true;
+		}
+		return false;
+	}
+
+	if (m.toCh == m.fromCh + 1 && m.toInt == m.fromInt - 1) {
+		if (valid(translateLetter(m.fromCh) + 1, translateInt(m.fromInt) - 1)) {
+			if (!is_Deadlocked(m, board, whites)) return true;
+		}
+		return false;
+	}
+
+	return false;
 }
 
 
 
 bool rook(const Move &m, char board[][BOARD_SIZE]) {
 
-	int char_diff = abs(m.toCh - m.fromCh); 
-	int int_diff = abs(m.toInt - m.fromInt); 
+	int char_diff = abs(m.toCh - m.fromCh);
+	int int_diff = abs(m.toInt - m.fromInt);
 
-	if ( m.fromCh != m.toCh && m.fromInt != m.toInt )
+	if (m.fromCh != m.toCh && m.fromInt != m.toInt)
 		return false;
-	
+
 	if (m.fromCh > m.toCh) {
 		for (int i = 1; i < char_diff; ++i) {
-			if ( board[translateInt(m.fromInt)][translateLetter(m.fromCh) - i] != ' ' )
+			if (board[translateInt(m.fromInt)][translateLetter(m.fromCh) - i] != ' ')
 				return false;
 		}
 	}
 	if (m.fromCh < m.toCh) {
-		for (int i = 1; i < char_diff; ++i){
-			if ( board[translateInt(m.fromInt)][translateLetter(m.fromCh) + i] != ' ' )
+		for (int i = 1; i < char_diff; ++i) {
+			if (board[translateInt(m.fromInt)][translateLetter(m.fromCh) + i] != ' ')
 				return false;
 		}
 	}
 	if (m.fromInt > m.toInt) {
 		for (int i = 1; i < int_diff; ++i) {
-			if ( board[translateInt(m.fromInt) + i][translateLetter(m.fromCh)] != ' ' )
+			if (board[translateInt(m.fromInt) + i][translateLetter(m.fromCh)] != ' ')
 				return false;
 		}
 	}
 	if (m.fromInt < m.toInt) {
 		for (int i = 1; i < int_diff; ++i) {
-			cout << (board[translateInt(m.fromInt) + i][translateLetter(m.fromCh)] != ' ' )<< endl;
-			if ( board[translateInt(m.fromInt) - i][translateLetter(m.fromCh)] != ' ' )
+			//cout << (board[translateInt(m.fromInt) + i][translateLetter(m.fromCh)] != ' ' )<< endl;
+			if (board[translateInt(m.fromInt) - i][translateLetter(m.fromCh)] != ' ')
 				return false;
 		}
 	}
@@ -334,8 +482,8 @@ bool rook(const Move &m, char board[][BOARD_SIZE]) {
 
 bool bishop(const Move& m, char board[][BOARD_SIZE]) {
 
-	int char_diff = (m.toCh - m.fromCh); //calculates the vertical shift(absolute value)
-	int int_diff = (m.toInt - m.fromInt); //calculates the horizontal shift(absolute value)
+	int char_diff = (m.toCh - m.fromCh); //calculates the vertical shift
+	int int_diff = (m.toInt - m.fromInt); //calculates the horizontal shift
 
 										  //basically in case of bishop the absolute value of vertical and horizontal shifts must be equal(diagonal move)
 	if (abs(char_diff) != abs(int_diff))
@@ -381,73 +529,18 @@ bool queen(const Move &m, char board[][BOARD_SIZE]) {
 }
 
 
+
 bool knight(const Move &m, char board[][BOARD_SIZE]) {
-	//Ruch skoczka można opisać jako krok o jedno pole w pionie lub poziomie, a następnie drugi krok na ukos,
-	// w kierunku oddalającym go od pola startowego. Niekiedy mówi się, że porusza się on „po literze L”.
-	// Przemieszcza się zawsze na pole przeciwnego koloru, pole to jest dodatkowo najbliższym polem o przeciwnym do
-	// wyjściowego kolorze, z wyłączeniem z nim sąsiadujących. Skoczek, tak jak każda inna figura, bije bierkę
-	// przeciwnika zajmując jej pole i porusza się przy biciu według tejże reguły, co i przy zwykłym ruchu.
 
-	//Skoczek jest niezwykły w porównaniu z innymi bierkami szachowymi.
-	// W przeciwieństwie do innych figur szachowych skoczek może zignorować bierki stojące mu na drodze i przeskakiwać przez nie.
-	// Poza tym jest jedyną figurą, która może rozpocząć partię (inną bierką o tej możliwości jest pion).
-
-
-
-	if (m.toCh == m.fromCh + 2 && m.toInt == m.fromInt + 1) {
-		if (valid(translateLetter(m.fromCh) + 2, translateInt(m.fromInt) + 1)) {
+	if ((translateLetter(m.fromCh) == translateLetter(m.toCh) + 1) || (translateLetter(m.fromCh) == translateLetter(m.toCh) - 1)) {
+		if ((translateInt(m.fromInt) == translateInt(m.toInt) + 2) || (translateInt(m.fromInt) == translateInt(m.toInt) - 2)) {
 			return true;
 		}
-		return false;
 	}
-
-	else if (m.toCh == m.fromCh + 2 && m.toInt == m.fromInt - 1) {
-		if (valid(translateLetter(m.fromCh) + 2, translateInt(m.fromInt) - 1)) {
+	if ((translateLetter(m.fromCh) == translateLetter(m.toCh) + 2) || (translateLetter(m.fromCh) == translateLetter(m.toCh) - 2)) {
+		if ((translateInt(m.fromInt) == translateInt(m.toInt) + 1) || (translateInt(m.fromInt) == translateInt(m.toInt) - 1)) {
 			return true;
 		}
-		return false;
-	}
-
-	else if (m.toCh == m.fromCh - 2 && m.toInt == m.fromInt + 1) {
-		if (valid(translateLetter(m.fromCh) - 2, translateInt(m.fromInt) + 1)) {
-			return true;
-		}
-		return false;
-	}
-
-	else if (m.toCh == m.fromCh - 2 && m.toInt == m.fromInt - 1) {
-		if (valid(translateLetter(m.fromCh) - 2, translateInt(m.fromInt) - 1)) {
-			return true;
-		}
-		return false;
-	}
-
-	else if (m.toCh == m.fromCh + 1 && m.toInt == m.fromInt - 2) {
-		if (valid(translateLetter(m.fromCh) + 1, translateInt(m.fromInt) - 2)) {
-			return true;
-		}
-		return false;
-	}
-
-	else if (m.toCh == m.fromCh + 1 && m.toInt == m.fromInt + 2) {
-		if (valid(translateLetter(m.fromCh) + 1, translateInt(m.fromInt) + 2)) {
-			return true;
-		}
-		return false;
-	}
-
-	else if (m.toCh == m.fromCh - 1 && m.toInt == m.fromInt - 2) {
-		if (valid(translateLetter(m.fromCh) - 1, translateInt(m.fromInt) - 2)) {
-			return true;
-		}
-		return false;
-	}
-
-	else if (m.toCh == m.fromCh - 1 && m.toInt == m.fromInt + 2) {
-		if (valid(translateLetter(m.fromCh) - 1, translateInt(m.fromInt) + 2)) {
-			return true;
-		}
-		return false;
 	}
 
 	return false;
@@ -455,10 +548,10 @@ bool knight(const Move &m, char board[][BOARD_SIZE]) {
 
 
 
-// Ta funkcja sprawdza czy ruch jest poprawny pod kątem:
+// Ta funkcja sprawdza czy ruch jest poprawny pod k�tem:
 // - czy na polu startowym jest moja figura
 // - czy pole docelowe jest wolne lub czy stoi na nim figura przeciwnika
-// - czy ruch dla danej figury jest dopuszczalny (pomijamy roszadę, ale nalezy uwzględnić, że pierwszy ruch każdego piona może być o dwie pozycje do przodu)
+// - czy ruch dla danej figury jest dopuszczalny (pomijamy roszad�, ale nalezy uwzgl�dni�, �e pierwszy ruch ka�dego piona mo�e by� o dwie pozycje do przodu)
 
 
 
@@ -522,7 +615,7 @@ bool valid(const Move& m, char board[][BOARD_SIZE], bool whites)
 
 
 
-// Sprawdza czy linia jest w postaci litera liczba litera liczba oraz zamienia litery małe na wielkie, ewentualnie usuwa także spacje np. c    1    D 3 zmiania na C1D3
+// Sprawdza czy linia jest w postaci litera liczba litera liczba oraz zamienia litery ma�e na wielkie, ewentualnie usuwa tak�e spacje np. c    1    D 3 zmiania na C1D3
 bool valid(char line[])
 {
 	int length = 0;
@@ -596,7 +689,7 @@ bool valid(char line[])
 
 
 
-// zamienia ciag znaków w postaci litera liczba litera liczba na strukturę Move
+// zamienia ciag znak�w w postaci litera liczba litera liczba na struktur� Move
 Move readMove(const char line[])
 {
 	char fromChars[20] = { ' ' };
@@ -671,13 +764,9 @@ Move getMove()
 
 void makeMove(Move m, char board[][BOARD_SIZE])
 {
-	int columnFrom = translateLetter(m.fromCh);
-	int columnTo = translateLetter(m.toCh);
-	int rowFrom = translateInt(m.fromInt);
-	int rowTo = translateInt(m.toInt);
-	char figure = board[rowFrom][columnFrom];
-	board[rowFrom][columnFrom] = ' ';
-	board[rowTo][columnTo] = figure;
+	char figure = board[translateInt(m.fromInt)][translateLetter(m.fromCh)];
+	board[translateInt(m.fromInt)][translateLetter(m.fromCh)] = ' ';
+	board[translateInt(m.toInt)][translateLetter(m.toCh)] = figure;
 }
 
 
@@ -773,7 +862,7 @@ bool endOfGame(char board[][BOARD_SIZE])
 int main()
 {
 	initBoard(board);
-	bool whites = true;
+	whites = true;
 	do {
 		displayBoard(board);
 		doMove(board, whites);
