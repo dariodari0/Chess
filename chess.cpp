@@ -44,37 +44,6 @@ namespace ErrorMessage {
 		badPieceMovement,
 		squareIsOccupied
 	};
-
-	void errorMessage(ErrorMessageTypes msg)
-	{
-		switch (msg) {
-
-		case ErrorMessage::badFormat:
-			clearLine(20);
-			cout << "Wrong coordinate format!" << endl << flush;
-			break;
-		case ErrorMessage::emptySpaceSelected:
-			clearLine(20);
-			cout << "No pawn on this square" << endl << flush;
-			break;
-		case ErrorMessage::wrongColorSelected:
-			clearLine(20);
-			cout << "This is not your pawn!" << endl << flush;
-			break;
-		case ErrorMessage::badPieceMovement:
-			clearLine(20);
-			cout << "This piece cannot do such movement!" << endl << flush;
-			break;
-		case ErrorMessage::squareIsOccupied:
-			clearLine(20);
-			cout << "Your pawn already occupies this field!" << endl << flush;
-			break;
-		default:
-			clearLine(20);
-			cout << "Error!" << endl << flush;
-
-		}
-	}
 }
 
 //CONSTANTS ----------------------------------------------------------------------------------------
@@ -144,6 +113,38 @@ for (short i = 0; i < count; i++)
 clearLine(y + i);
 }
 */
+
+
+void errorMessage(ErrorMessage::ErrorMessageTypes msg)
+{
+	switch (msg) {
+
+	case ErrorMessage::badFormat:
+		clearLine(20);
+		cout << "Wrong coordinate format!" << endl << flush;
+		break;
+	case ErrorMessage::emptySpaceSelected:
+		clearLine(20);
+		cout << "No pawn on this square" << endl << flush;
+		break;
+	case ErrorMessage::wrongColorSelected:
+		clearLine(20);
+		cout << "This is not your pawn!" << endl << flush;
+		break;
+	case ErrorMessage::badPieceMovement:
+		clearLine(20);
+		cout << "This piece cannot do such movement!" << endl << flush;
+		break;
+	case ErrorMessage::squareIsOccupied:
+		clearLine(20);
+		cout << "Your pawn already occupies this field!" << endl << flush;
+		break;
+	default:
+		clearLine(20);
+		cout << "Error!" << endl << flush;
+
+	}
+}
 
 
 
