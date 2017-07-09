@@ -21,7 +21,7 @@
 
 //LIBRARIES --------------------------------------------------------------------------------------
 // important for VS
-#include "stdafx.h"
+//#include "stdafx.h"
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -53,7 +53,7 @@ const int BOARD_SIZE = 8;
 //GLOBAL VARIABLES ---------------------------------------------------------------------------------
 
 char board[BOARD_SIZE][BOARD_SIZE] = { ' ' };
-const char startup[8][8] = { 'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r', 'p', 'p','p','p','p','p','p', 'p', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'K', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R' };
+const char startup[8][8] = { 'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r', 'p', 'p','p','p','p','p','p', 'p', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R' };
 
 struct Move {
 	char fromCh;
@@ -189,6 +189,8 @@ bool knight(const Move &m, char board[][BOARD_SIZE]);
 bool rook(const Move &m, char board[][BOARD_SIZE]);
 bool pawn(const Move &m, char board[][BOARD_SIZE], bool whites);
 
+void strcpy_s(char str[1024], const char *c_str, int i);
+
 //this function checks if the king is deadlocked(to be used in king's move validation[king])
 bool is_Deadlocked(const Move &m, char board[][BOARD_SIZE], bool whites) {
 
@@ -206,7 +208,7 @@ bool is_Deadlocked(const Move &m, char board[][BOARD_SIZE], bool whites) {
 	char figure;
 
 	//setting up the Move structures for each enemy figure
-	for (int i = 0; i<BOARD_SIZE; i++) { 
+	for (int i = 0; i<BOARD_SIZE; i++) {
 		for (int j = 0; j<BOARD_SIZE; j++) {
 			figure = board[i][j];
 
@@ -221,7 +223,7 @@ bool is_Deadlocked(const Move &m, char board[][BOARD_SIZE], bool whites) {
 			}
 
 			if (!whites) {
-				
+
 				if (figure == 'K') m_King.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
 				if (figure == 'Q') m_Queen.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
 				if (figure == 'B') m_Bishop.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
@@ -234,7 +236,7 @@ bool is_Deadlocked(const Move &m, char board[][BOARD_SIZE], bool whites) {
 	}
 
 	//returns true if any figure can move into kings destiny position->this means king is deadlocked
-	
+
 	if (king(m_King, board, whites))
 		return true;
 	else if (queen(m_Queen, board))
@@ -255,43 +257,43 @@ bool king(const Move &m, char board[][BOARD_SIZE], bool whites) {
 
 	//step one- checking if the move is within king's range
 	if (m.toCh == m.fromCh + 1 && m.toInt == m.fromInt) {
-			//step two- checking if king is deadlocked
-			if (!is_Deadlocked(m, board, whites)) return true; 
+		//step two- checking if king is deadlocked
+		if (!is_Deadlocked(m, board, whites)) return true;
 		return false;
 	}
 
 	if (m.toCh == m.fromCh  && m.toInt == m.fromInt + 1) {
-			if (!is_Deadlocked(m, board, whites)) return true;
+		if (!is_Deadlocked(m, board, whites)) return true;
 		return false;
 	}
 
 	if (m.toCh == m.fromCh + 1 && m.toInt == m.fromInt + 1) {
-			if (!is_Deadlocked(m, board, whites)) return true;
+		if (!is_Deadlocked(m, board, whites)) return true;
 		return false;
 	}
 
 	if (m.toCh == m.fromCh - 1 && m.toInt == m.fromInt) {
-			if (!is_Deadlocked(m, board, whites)) return true;
+		if (!is_Deadlocked(m, board, whites)) return true;
 		return false;
 	}
 
 	if (m.toCh == m.fromCh  && m.toInt == m.fromInt - 1) {
-			if (!is_Deadlocked(m, board, whites)) return true;
+		if (!is_Deadlocked(m, board, whites)) return true;
 		return false;
 	}
 
 	if (m.toCh == m.fromCh - 1 && m.toInt == m.fromInt - 1) {
-			if (!is_Deadlocked(m, board, whites)) return true;
+		if (!is_Deadlocked(m, board, whites)) return true;
 		return false;
 	}
 
 	if (m.toCh == m.fromCh - 1 && m.toInt == m.fromInt + 1) {
-			if (!is_Deadlocked(m, board, whites)) return true;
+		if (!is_Deadlocked(m, board, whites)) return true;
 		return false;
 	}
 
 	if (m.toCh == m.fromCh + 1 && m.toInt == m.fromInt - 1) {
-			if (!is_Deadlocked(m, board, whites)) return true;
+		if (!is_Deadlocked(m, board, whites)) return true;
 		return false;
 	}
 
@@ -724,9 +726,9 @@ Move readMove(const char line[])
 	}
 
 	Move move;
-	strcpy(&move.fromCh, fromChars);
+	move.fromCh = fromChars[0];
 	move.fromInt = fromInt;
-	strcpy(&move.toCh, toChars);
+	move.toCh = toChars[0];
 	move.toInt = toInt;
 
 	return move;
@@ -739,11 +741,17 @@ Move getMove()
 	char lineStr[1024];
 	do {
 		getline(cin, line);
-		strcpy(lineStr, line.c_str());
+		strcpy_s(lineStr, line.c_str(), 1024);
 	} while (!valid(lineStr) || !valid((m = readMove(lineStr))));
 	return m;
 }
 
+void strcpy_s(char str[1024], const char *c_str, int i) {
+	for (int p = 0; p<1023; p++) {
+		str[p] = c_str[p];
+	}
+	str[1023] = '\0';
+}
 
 
 void makeMove(Move m, char board[][BOARD_SIZE])
@@ -751,6 +759,23 @@ void makeMove(Move m, char board[][BOARD_SIZE])
 	char figure = board[translateInt(m.fromInt)][translateLetter(m.fromCh)];
 	board[translateInt(m.fromInt)][translateLetter(m.fromCh)] = ' ';
 	board[translateInt(m.toInt)][translateLetter(m.toCh)] = figure;
+}
+
+void doMove(char board[][BOARD_SIZE], bool whites)
+{
+	if (whites)
+		cout << "White turn:" << endl;
+	else
+		cout << "Black turn:" << endl;
+
+	Move m;
+	do {
+		do {
+			m = getMove();
+		} while (!valid(m));
+	} while (!valid(m, board, whites));
+	makeMove(m, board);
+
 }
 
 
@@ -823,21 +848,6 @@ void initBoard(char board[][BOARD_SIZE])
 	}
 }
 
-
-void doMove(char board[][BOARD_SIZE], bool whites)
-{
-	cout << "Your move:" << endl << flush;
-
-	Move m;
-	do {
-		do {
-			m = getMove();
-		} while (!valid(m));
-	} while (!valid(m, board, whites));
-	makeMove(m, board);
-
-}
-
 bool endOfGame(char board[][BOARD_SIZE])
 {
 	return false;
@@ -850,7 +860,7 @@ int main()
 	do {
 		displayBoard(board);
 		doMove(board, whites);
-		//whites = !whites;
+		whites = !whites;
 		clearScreen();
 	} while (!endOfGame(board));
 
