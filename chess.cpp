@@ -18,10 +18,26 @@
 //   +---+---+---+---+---+---+---+---+
 //     A   B   C   D   E   F   G   H
 
+/*
+TODO:
+Dostosować funkcję is_Deadlocked(), powinna się tym zająć osoba która sworzyła funkcję
+
+Dostosować funkcję readMove(), w ten sposób że powinna przyjmować string i na nim operować. 
+Zmienna Move powinna zostać stworzona przez konstruktor do którego podaje się string w formie: A2B4 (jedyna akceptowalna forma końcowa)
+
+Przeciążyć operator () tak aby mógł załadować 2 zmienny int które będą odpowiadać zmiennym koordynatów Move
+
+Zastiąpić wszystkie operatory dostępu do tablicy przez nowy operator
+
+Dalej trzeba przetestować czy wszystko działa :D, pewnie nie
+*/
+
+
+
 
 //LIBRARIES --------------------------------------------------------------------------------------
 // important for VS
-//#include "stdafx.h"
+#include "stdafx.h"
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -29,6 +45,7 @@
 #ifdef _WIN32
 #include <windows.h>
 #endif
+
 
 //NAMESPACES ----------------------------------------------------------------------------------------
 
@@ -53,24 +70,65 @@ const int BOARD_SIZE = 8;
 
 //GLOBAL VARIABLES ---------------------------------------------------------------------------------
 
-char board[BOARD_SIZE][BOARD_SIZE] = { ' ' };
+//char board[BOARD_SIZE][BOARD_SIZE] = { ' ' };
 
+
+struct Coord {
+	int x;
+	int y;
+};
 
 struct Move {
+	Coord from;
+	Coord to;
+	Move() {
+		from.x = 0;
+		from.y = 0;
+		to.x = 0;
+		to.y = 0;
+	}
+	Move(string line) {
+		from.x = line[0] - 'A';
+		from.y = BOARD_SIZE - (line[1] - '1') - 1;
+		to.x = line[2] - 'A';
+		to.y = BOARD_SIZE - (line[3] - '1') - 1;
+	}
+};
+
+class Board {
+
+private:
+	//char board[BOARD_SIZE][BOARD_SIZE] = { ' ' };
+	char* board;
+	
+	
+	void init(char(*board)[8]);
+	void display(char(*board)[8]);
+
+public:
+	
+	Board(int boardSize) { board = new char[boardSize * boardSize]; }
+	void display();
+	void init();
+	void makeMove(const Move& m);
+};
+
+/*
+struct Move {
 	char fromCh;
-	int fromInt;
+	int from.y;
 	char toCh;
 	int toInt;
 
-	void Fill(char fromCh, int fromInt, char toCh, int toInt) {
+	void Fill(char fromCh, int from.y, char toCh, int toInt) {
 		this->fromCh = fromCh;
-		this->fromInt = fromInt;
+		this->from.y = from.y;
 		this->toCh = toCh;
 		this->toInt = toInt;
 	}
 
 };
-
+*/
 //GLOBAL FUNCTIONS ---------------------------------------------------------------------------------
 
 #ifdef _WIN32
@@ -152,7 +210,7 @@ void errorMessage(ErrorMessage::ErrorMessageTypes msg)
 }
 
 
-
+/*
 // translate chess letter value to board coord
 int translateLetter(char letter) {
 	int result = letter - 'A';
@@ -175,7 +233,7 @@ int translateInt(int number) {
 	//reverse numbers of rows to correctly address the array board
 	return BOARD_SIZE - number;
 }
-
+*/
 int inverseTranslateInt(int x) {
 	return BOARD_SIZE - x;
 }
@@ -186,21 +244,21 @@ char inverseTranslateCh(int x) {
 
 
 //figure functions declarations
-bool king(const Move &m, char board[][BOARD_SIZE], bool whites);
-bool king(const Move &m, char board[][BOARD_SIZE]);
-bool queen(const Move &m, char board[][BOARD_SIZE]);
-bool bishop(const Move &m, char board[][BOARD_SIZE]);
-bool knight(const Move &m, char board[][BOARD_SIZE]);
-bool rook(const Move &m, char board[][BOARD_SIZE]);
-bool pawn(const Move &m, char board[][BOARD_SIZE], bool whites);
+bool king(const Move &m, Board board, bool whites);
+bool king(const Move &m, Board board);
+bool queen(const Move &m, Board board);
+bool bishop(const Move &m, Board board);
+bool knight(const Move &m, Board board);
+bool rook(const Move &m, Board board);
+bool pawn(const Move &m, Board board, bool whites);
 
 void strcpy_s(char str[1024], const char *c_str, int i);
 
 //this function checks if the king is deadlocked(to be used in king's move validation[king])
-bool is_Deadlocked(const Move &m, char board[][BOARD_SIZE], bool whites) {
+bool is_Deadlocked(const Move &m, Board board, bool whites) {
 
-	int toInt = m.toInt;
-	char toCh = m.toCh;
+	int toInt = m.to.y;
+	char toCh = m.to.x;
 
 
 	Move m_King;
@@ -258,39 +316,39 @@ bool is_Deadlocked(const Move &m, char board[][BOARD_SIZE], bool whites) {
 	return false;
 }
 
-bool king(const Move &m, char board[][BOARD_SIZE], bool whites) {
+bool king(const Move &m, Board board, bool whites) {
 
 	//step one- checking if the move is within king's range
-	if (m.toCh == m.fromCh + 1 && m.toInt == m.fromInt) {
+	if (m.to.x == m.from.x + 1 && m.to.y == m.from.y) {
 		//step two- checking if king is deadlocked
 		return !is_Deadlocked(m, board, whites);
 	}
 
-	if (m.toCh == m.fromCh  && m.toInt == m.fromInt + 1) {
+	if (m.to.x == m.from.x  && m.to.y == m.from.y + 1) {
 		return !is_Deadlocked(m, board, whites);
 	}
 
-	if (m.toCh == m.fromCh + 1 && m.toInt == m.fromInt + 1) {
+	if (m.to.x == m.from.x + 1 && m.to.y == m.from.y + 1) {
 		return !is_Deadlocked(m, board, whites);
 	}
 
-	if (m.toCh == m.fromCh - 1 && m.toInt == m.fromInt) {
+	if (m.to.x == m.from.x - 1 && m.to.y == m.from.y) {
 		return !is_Deadlocked(m, board, whites);
 	}
 
-	if (m.toCh == m.fromCh  && m.toInt == m.fromInt - 1) {
+	if (m.to.x == m.from.x  && m.to.y == m.from.y - 1) {
 		return !is_Deadlocked(m, board, whites);
 	}
 
-	if (m.toCh == m.fromCh - 1 && m.toInt == m.fromInt - 1) {
+	if (m.to.x == m.from.x - 1 && m.to.y == m.from.y - 1) {
 		return !is_Deadlocked(m, board, whites);
 	}
 
-	if (m.toCh == m.fromCh - 1 && m.toInt == m.fromInt + 1) {
+	if (m.to.x == m.from.x - 1 && m.to.y == m.from.y + 1) {
 		return !is_Deadlocked(m, board, whites);
 	}
 
-	if (m.toCh == m.fromCh + 1 && m.toInt == m.fromInt - 1) {
+	if (m.to.x == m.from.x + 1 && m.to.y == m.from.y - 1) {
 		return !is_Deadlocked(m, board, whites);
 	}
 
@@ -298,54 +356,54 @@ bool king(const Move &m, char board[][BOARD_SIZE], bool whites) {
 	return false;
 }
 
-bool king(const Move &m, char board[][BOARD_SIZE]) {
+bool king(const Move &m, Board board) {
 
-	if (m.toCh == m.fromCh + 1 && m.toInt == m.fromInt) {
+	if (m.to.x == m.from.x + 1 && m.to.y == m.from.y) {
 		return true;
 	}
 
-	if (m.toCh == m.fromCh  && m.toInt == m.fromInt + 1) {
+	if (m.to.x == m.from.x  && m.to.y == m.from.y + 1) {
 		return true;
 	}
 
-	if (m.toCh == m.fromCh + 1 && m.toInt == m.fromInt + 1) {
+	if (m.to.x == m.from.x + 1 && m.to.y == m.from.y + 1) {
 		return true;
 	}
 
-	if (m.toCh == m.fromCh - 1 && m.toInt == m.fromInt) {
+	if (m.to.x == m.from.x - 1 && m.to.y == m.from.y) {
 		return true;
 	}
 
-	if (m.toCh == m.fromCh  && m.toInt == m.fromInt - 1) {
+	if (m.to.x == m.from.x  && m.to.y == m.from.y - 1) {
 		return true;
 	}
 
-	if (m.toCh == m.fromCh - 1 && m.toInt == m.fromInt - 1) {
+	if (m.to.x == m.from.x - 1 && m.to.y == m.from.y - 1) {
 		return true;
 	}
 
-	if (m.toCh == m.fromCh - 1 && m.toInt == m.fromInt + 1) {
+	if (m.to.x == m.from.x - 1 && m.to.y == m.from.y + 1) {
 		return true;
 	}
 
-	if (m.toCh == m.fromCh + 1 && m.toInt == m.fromInt - 1) {
+	if (m.to.x == m.from.x + 1 && m.to.y == m.from.y - 1) {
 		return true;
 	}
 
 	return false;
 }
 
-bool queen(const Move &m, char board[][BOARD_SIZE]) {
+bool queen(const Move &m, Board board) {
 	if (rook(m, board) || bishop(m, board))
 		return true;
 	else
 		return false;
 }
 
-bool bishop(const Move& m, char board[][BOARD_SIZE]) {
+bool bishop(const Move& m, Board board) {
 
-	int char_diff = (m.toCh - m.fromCh);
-	int int_diff = (m.toInt - m.fromInt);
+	int char_diff = (m.to.x - m.from.x);
+	int int_diff = (m.to.y - m.from.y);
 
 	//basically in case of bishop the absolute value of vertical and horizontal shifts must be equal(diagonal move)
 	if (abs(char_diff) != abs(int_diff)) {
@@ -355,7 +413,7 @@ bool bishop(const Move& m, char board[][BOARD_SIZE]) {
 
 	else if (int_diff>0 && char_diff>0) {
 		for (int i = 1; i < abs(char_diff); i++) {
-			if (board[translateInt(m.fromInt) - i][translateLetter(m.fromCh) + i] != ' '){
+			if (board[m.from.y - i][m.from.x + i] != ' '){
 				errorMessage(ErrorMessage::movementOverFigure);
 				return false;
 			}
@@ -364,7 +422,7 @@ bool bishop(const Move& m, char board[][BOARD_SIZE]) {
 
 	else if (int_diff<0 && char_diff<0) {
 		for (int i = 1; i < abs(char_diff); i++) {
-			if (board[translateInt(m.fromInt) + i][translateLetter(m.fromCh) - i] != ' '){
+			if (board[m.from.y) + i][m.from.x - i] != ' '){
 				errorMessage(ErrorMessage::movementOverFigure);
 				return false;
 			}
@@ -373,7 +431,7 @@ bool bishop(const Move& m, char board[][BOARD_SIZE]) {
 
 	else if (int_diff<0 && char_diff>0) {
 		for (int i = 1; i<abs(char_diff); i++) {
-			if (board[translateInt(m.fromInt) + i][translateLetter(m.fromCh) + i] != ' ') {
+			if (board[m.from.y + i][m.from.x + i] != ' ') {
 				errorMessage(ErrorMessage::movementOverFigure);
 				return false;
 			}
@@ -382,7 +440,7 @@ bool bishop(const Move& m, char board[][BOARD_SIZE]) {
 
 	else if (int_diff>0 && char_diff<0) {
 		for (int i = 1; i < abs(char_diff); i++) {
-			if (board[translateInt(m.fromInt) - i][translateLetter(m.fromCh) - i] != ' '){
+			if (board[m.from.y - i][m.from.x - i] != ' '){
 				errorMessage(ErrorMessage::movementOverFigure);
 				return false;
 			}
@@ -392,55 +450,55 @@ bool bishop(const Move& m, char board[][BOARD_SIZE]) {
 	return true;
 }
 
-bool knight(const Move &m, char board[][BOARD_SIZE]) {
+bool knight(const Move &m, Board board) {
 
-	if (abs(m.fromCh - m.toCh) == 1 && abs(m.fromInt - m.toInt == 2))
+	if (abs(m.from.x - m.to.x) == 1 && abs(m.from.y - m.to.y == 2))
 		return true;
 
-	if (abs(m.fromCh - m.toCh) == 2 && abs(m.fromInt - m.toInt == 1))
+	if (abs(m.from.x - m.to.x) == 2 && abs(m.from.y - m.to.y == 1))
 		return true;
 
 	errorMessage(ErrorMessage::badPieceMovement);
 	return false;
 }
 
-bool rook(const Move &m, char board[][BOARD_SIZE]) {
+bool rook(const Move &m, Board board) {
 
-	int char_diff = abs(m.toCh - m.fromCh);
-	int int_diff = abs(m.toInt - m.fromInt);
+	int char_diff = abs(m.to.x - m.from.x);
+	int int_diff = abs(m.to.y - m.from.y);
 
-	if (m.fromCh != m.toCh && m.fromInt != m.toInt) {
+	if (m.from.x != m.to.x && m.from.y != m.to.y) {
 		errorMessage(ErrorMessage::badPieceMovement);
 		return false;
 	}
 
-	if (m.fromCh > m.toCh) {
+	if (m.from.x > m.to.x) {
 		for (int i = 1; i < char_diff; ++i) {
-			if (board[translateInt(m.fromInt)][translateLetter(m.fromCh) - i] != ' ') {
+			if (board[m.from.y][m.from.x - i] != ' ') {
 				errorMessage(ErrorMessage::movementOverFigure);
 				return false;
 			}
 		}
 	}
-	if (m.fromCh < m.toCh) {
+	if (m.from.x < m.to.x) {
 		for (int i = 1; i < char_diff; ++i) {
-			if (board[translateInt(m.fromInt)][translateLetter(m.fromCh) + i] != ' ') {
+			if (board[m.from.y][m.from.x + i] != ' ') {
 				errorMessage(ErrorMessage::movementOverFigure);
 				return false;
 			}
 		}
 	}
-	if (m.fromInt > m.toInt) {
+	if (m.from.y > m.to.y) {
 		for (int i = 1; i < int_diff; ++i) {
-			if (board[translateInt(m.fromInt) + i][translateLetter(m.fromCh)] != ' ') {
+			if (board[m.from.y + i][m.from.x] != ' ') {
 				errorMessage(ErrorMessage::movementOverFigure);
 				return false;
 			}
 		}
 	}
-	if (m.fromInt < m.toInt) {
+	if (m.from.y < m.to.y) {
 		for (int i = 1; i < int_diff; ++i) {
-			if (board[translateInt(m.fromInt) - i][translateLetter(m.fromCh)] != ' ') {
+			if (board[m.from.y - i][m.from.x] != ' ') {
 				errorMessage(ErrorMessage::movementOverFigure);
 				return false;
 			}
@@ -452,12 +510,12 @@ bool rook(const Move &m, char board[][BOARD_SIZE]) {
 
 
 
-bool pawn(const Move &m, char board[][BOARD_SIZE], bool whites) {
+bool pawn(const Move &m, Board board, bool whites) {
 
-	int chFrom = translateLetter(m.fromCh);
-	int intFrom = translateInt(m.fromInt);
-	int chTo = translateLetter(m.toCh);
-	int intTo = translateInt(m.toInt);
+	int chFrom = m.from.x;
+	int intFrom = m.from.y;
+	int chTo = m.to.x;
+	int intTo = m.to.y;
 
 	int pawnColor = 1;
 	if (whites) pawnColor = -1;
@@ -476,7 +534,7 @@ bool pawn(const Move &m, char board[][BOARD_SIZE], bool whites) {
 		}
 
 		//is pawn located in its initial row on the chessboard
-		else if (intFrom == translateInt(2) || intFrom == translateInt(BOARD_SIZE - 1)) {
+		else if (intFrom == 2 || intFrom == BOARD_SIZE - 1) {
 			//first movement of a pawn, allowed movement by 1 or 2 fields, moves only forwards and kills crosswise
 			//movement by 2 fields allowed for a pawn
 			if (intTo == intFrom + 2* pawnColor && chTo == chFrom && board[intFrom + pawnColor][chFrom] == ' ' &&
@@ -491,9 +549,9 @@ bool pawn(const Move &m, char board[][BOARD_SIZE], bool whites) {
 
 
 // Check if proper pawn is selected or space is empty
-bool isPieceSelected(const Move &m, char board[][BOARD_SIZE], bool whites) {
+bool isPieceSelected(const Move &m, Board board, bool whites) {
 
-	char piece = board[translateInt(m.fromInt)][translateLetter(m.fromCh)];
+	char piece = board[m.from.y][m.from.x];
 
 	if (piece >= 'a' && piece <= 'z') {
 		if (whites == true) {
@@ -519,9 +577,9 @@ bool isPieceSelected(const Move &m, char board[][BOARD_SIZE], bool whites) {
 }
 
 // Check is pawn can enter selected square
-bool isSquareAvailable(const Move &m, char board[][BOARD_SIZE], bool whites) {
+bool isSquareAvailable(const Move &m, Board board, bool whites) {
 
-	char piece = board[translateInt(m.toInt)][translateLetter(m.toCh)];
+	char piece = board[m.from.y][m.from.x];
 
 	if (piece >= 'a' && piece <= 'z') {
 		if (whites == false) {
@@ -542,9 +600,9 @@ bool isSquareAvailable(const Move &m, char board[][BOARD_SIZE], bool whites) {
 
 
 // Check if move of figure is valid according to chess rules
-bool valid(const Move& m, char board[][BOARD_SIZE], bool whites)
+bool valid(const Move& m, Board board, bool whites)
 {
-	char piece = board[translateInt(m.fromInt)][translateLetter(m.fromCh)];
+	char piece = board[m.from.y][m.from.x];
 
 	if (!(isPieceSelected(m, board, whites))) {
 		return false;
@@ -595,16 +653,16 @@ bool valid(const Move& m, char board[][BOARD_SIZE], bool whites)
 
 bool valid(Move m) {
 
-	if (m.fromCh < 'A' || m.fromCh >= 'A' + BOARD_SIZE) {
+	if (m.from.x < 'A' || m.from.x >= 'A' + BOARD_SIZE) {
 		return false;
 	}
-	else if (m.toCh < 'A' || m.toCh >= 'A' + BOARD_SIZE) {
+	else if (m.to.x < 'A' || m.to.x >= 'A' + BOARD_SIZE) {
 		return false;
 	}
-	else if (m.fromInt < 1 || m.fromInt > BOARD_SIZE) {
+	else if (m.from.y < 1 || m.from.y > BOARD_SIZE) {
 		return false;
 	}
-	else if (m.toInt < 1 || m.toInt > BOARD_SIZE) {
+	else if (m.to.y < 1 || m.to.y > BOARD_SIZE) {
 		return false;
 	}
 	return true;
@@ -746,11 +804,11 @@ Move readMove(const char line[])
 		i++;
 	}
 
-	Move move;
-	move.fromCh = fromChars[0];
-	move.fromInt = fromInt;
-	move.toCh = toChars[0];
-	move.toInt = toInt;
+	Move move();
+	move.from.x = fromChars[0];
+	move.from.y = from.y;
+	move.to.x = toChars[0];
+	move.to.y = toInt;
 
 	return move;
 }
@@ -782,14 +840,14 @@ void strcpy_s(char str[1024], const char *c_str, int i) {
 }
 
 
-void makeMove(Move m, char board[][BOARD_SIZE])
+void Board::makeMove(const Move& m)
 {
-	char figure = board[translateInt(m.fromInt)][translateLetter(m.fromCh)];
-	board[translateInt(m.fromInt)][translateLetter(m.fromCh)] = ' ';
-	board[translateInt(m.toInt)][translateLetter(m.toCh)] = figure;
+	char figure = board[m.from.y][m.from.x];
+	board[m.from.y][m.from.x] = ' ';
+	board[m.to.y][m.to.x] = figure;
 }
 
-void doMove(char board[][BOARD_SIZE], bool whites)
+void doMove(Board board, bool whites)
 {
 	Move m;
 	do {
@@ -797,14 +855,14 @@ void doMove(char board[][BOARD_SIZE], bool whites)
 			m = getMove(whites);
 		} while (!valid(m));
 	} while (!valid(m, board, whites));
-	makeMove(m, board);
+	board.makeMove(m);
 
 }
 
 
 //displays board - takes array board[BOARD_SIZE][BOARD_SIZE]
 // and reads its contents, and displays on the screen
-void displayBoard(char board[][BOARD_SIZE])
+void Board::display(char(*board)[8])
 {
 	//variable letter is used in a loop to display letters representing columns
 	//the loop automatically displays chars, simpler loops returned intergers instead of chars
@@ -858,8 +916,12 @@ void displayBoard(char board[][BOARD_SIZE])
 
 }
 
+void Board::display() 
+{
+	display((char(*)[8])board);
+}
 
-void initBoard(char board[][BOARD_SIZE])
+void Board::init(char(*board)[8])
 {
 	clearScreen();
 	const char figuresRow[BOARD_SIZE] = { 'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r' };
@@ -879,17 +941,22 @@ void initBoard(char board[][BOARD_SIZE])
 		board[BOARD_SIZE - 1][i] = toupper(figuresRow[i]);
 }
 
-bool endOfGame(char board[][BOARD_SIZE])
+void Board::init() {
+	init((char(*)[8])board);
+}
+
+bool endOfGame(Board board)
 {
 	return false;
 }
 
 int main()
 {
-	initBoard(board);
+	Board board = Board(8);
+	board.init();
 	bool whites = true;
 	do {
-		displayBoard(board);
+		board.display();
 		doMove(board, whites);
 		whites = !whites;
 		clearScreen();
