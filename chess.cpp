@@ -22,14 +22,6 @@
 TODO:
 Dostosować funkcję is_Deadlocked(), powinna się tym zająć osoba która sworzyła funkcję
 
-Dostosować funkcję readMove(), w ten sposób że powinna przyjmować string i na nim operować. 
-Zmienna Move powinna zostać stworzona przez konstruktor do którego podaje się string w formie: A2B4 (jedyna akceptowalna forma końcowa)
-
-Przeciążyć operator () tak aby mógł załadować 2 zmienny int które będą odpowiadać zmiennym koordynatów Move
-
-Zastiąpić wszystkie operatory dostępu do tablicy przez nowy operator
-
-Dalej trzeba przetestować czy wszystko działa :D, pewnie nie
 */
 
 
@@ -41,6 +33,7 @@ Dalej trzeba przetestować czy wszystko działa :D, pewnie nie
 #include <iostream>
 #include <iomanip>
 #include <string>
+#include <algorithm>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -54,8 +47,12 @@ using namespace std;
 
 // Will be upgraded if necessary
 namespace ErrorMessage {
+
+	static string playerInputLine;
+
 	enum ErrorMessageTypes {
 		badFormat,
+		coordBeyondBoard,
 		emptySpaceSelected,
 		wrongColorSelected,
 		badPieceMovement,
@@ -74,24 +71,24 @@ const int BOARD_SIZE = 8;
 
 
 struct Coord {
-	int x;
-	int y;
+	int row;
+	int col;
 };
 
 struct Move {
 	Coord from;
 	Coord to;
 	Move() {
-		from.x = 0;
-		from.y = 0;
-		to.x = 0;
-		to.y = 0;
+		from.col = 0;
+		from.row = 0;
+		to.col = 0;
+		to.row = 0;
 	}
 	Move(string line) {
-		from.x = line[0] - 'A';
-		from.y = BOARD_SIZE - (line[1] - '1') - 1;
-		to.x = line[2] - 'A';
-		to.y = BOARD_SIZE - (line[3] - '1') - 1;
+		from.col = line[0] - 'A';
+		from.row = BOARD_SIZE - (line[1] - '1') - 1;
+		to.col = line[2] - 'A';
+		to.row = BOARD_SIZE - (line[3] - '1') - 1;
 	}
 };
 
@@ -100,29 +97,36 @@ class Board {
 private:
 	//char board[BOARD_SIZE][BOARD_SIZE] = { ' ' };
 	char* board;
-	
-	
-	void init(char(*board)[8]);
-	void display(char(*board)[8]);
 
 public:
-	
 	Board(int boardSize) { board = new char[boardSize * boardSize]; }
+
 	void display();
 	void init();
 	void makeMove(const Move& m);
+
+	char& operator()(int x, int y);
+	char operator()(int x, int y) const;
 };
+
+char& Board::operator()(int row, int col) {
+	return *(board + (col + row * BOARD_SIZE));
+}
+
+char Board::operator()(int row, int col) const {
+	return *(board + (col + row * BOARD_SIZE));
+}
 
 /*
 struct Move {
 	char fromCh;
-	int from.y;
+	int from.row;
 	char toCh;
 	int toInt;
 
-	void Fill(char fromCh, int from.y, char toCh, int toInt) {
+	void Fill(char fromCh, int from.row, char toCh, int toInt) {
 		this->fromCh = fromCh;
-		this->from.y = from.y;
+		this->from.row = from.row;
 		this->toCh = toCh;
 		this->toInt = toInt;
 	}
@@ -164,14 +168,14 @@ void clearScreen()
 #endif
 }
 
-//function so far is never used
-/*
+
+
 void clearLinesFrom(short y, short count)
 {
 for (short i = 0; i < count; i++)
 clearLine(y + i);
 }
-*/
+
 
 
 void errorMessage(ErrorMessage::ErrorMessageTypes msg)
@@ -181,6 +185,10 @@ void errorMessage(ErrorMessage::ErrorMessageTypes msg)
 	case ErrorMessage::badFormat:
 		clearLine(20);
 		cout << "Wrong coordinate format! Try: A2 F3" << endl;
+		break;
+	case ErrorMessage::coordBeyondBoard:
+		clearLine(20);
+		cout << "Coordinates are outside the board! Try between A-H and 1-8" << endl;
 		break;
 	case ErrorMessage::emptySpaceSelected:
 		clearLine(20);
@@ -207,6 +215,12 @@ void errorMessage(ErrorMessage::ErrorMessageTypes msg)
 		cout << "Error!" << endl;
 
 	}
+	clearLine(21);
+	cout << "Your input: " << ErrorMessage::playerInputLine << endl;
+	cout << endl << "Press Enter to Continue";
+	cin.ignore();
+	clearLinesFrom(20, 3);
+	gotoXY(0, 20);
 }
 
 
@@ -252,13 +266,13 @@ bool knight(const Move &m, Board board);
 bool rook(const Move &m, Board board);
 bool pawn(const Move &m, Board board, bool whites);
 
-void strcpy_s(char str[1024], const char *c_str, int i);
+
 
 //this function checks if the king is deadlocked(to be used in king's move validation[king])
 bool is_Deadlocked(const Move &m, Board board, bool whites) {
 
-	int toInt = m.to.y;
-	char toCh = m.to.x;
+	int toInt = m.to.row;
+	char toCh = m.to.col;
 
 
 	Move m_King;
@@ -319,36 +333,36 @@ bool is_Deadlocked(const Move &m, Board board, bool whites) {
 bool king(const Move &m, Board board, bool whites) {
 
 	//step one- checking if the move is within king's range
-	if (m.to.x == m.from.x + 1 && m.to.y == m.from.y) {
+	if (m.to.col == m.from.col + 1 && m.to.row == m.from.row) {
 		//step two- checking if king is deadlocked
 		return !is_Deadlocked(m, board, whites);
 	}
 
-	if (m.to.x == m.from.x  && m.to.y == m.from.y + 1) {
+	if (m.to.col == m.from.col  && m.to.row == m.from.row + 1) {
 		return !is_Deadlocked(m, board, whites);
 	}
 
-	if (m.to.x == m.from.x + 1 && m.to.y == m.from.y + 1) {
+	if (m.to.col == m.from.col + 1 && m.to.row == m.from.row + 1) {
 		return !is_Deadlocked(m, board, whites);
 	}
 
-	if (m.to.x == m.from.x - 1 && m.to.y == m.from.y) {
+	if (m.to.col == m.from.col - 1 && m.to.row == m.from.row) {
 		return !is_Deadlocked(m, board, whites);
 	}
 
-	if (m.to.x == m.from.x  && m.to.y == m.from.y - 1) {
+	if (m.to.col == m.from.col  && m.to.row == m.from.row - 1) {
 		return !is_Deadlocked(m, board, whites);
 	}
 
-	if (m.to.x == m.from.x - 1 && m.to.y == m.from.y - 1) {
+	if (m.to.col == m.from.col - 1 && m.to.row == m.from.row - 1) {
 		return !is_Deadlocked(m, board, whites);
 	}
 
-	if (m.to.x == m.from.x - 1 && m.to.y == m.from.y + 1) {
+	if (m.to.col == m.from.col - 1 && m.to.row == m.from.row + 1) {
 		return !is_Deadlocked(m, board, whites);
 	}
 
-	if (m.to.x == m.from.x + 1 && m.to.y == m.from.y - 1) {
+	if (m.to.col == m.from.col + 1 && m.to.row == m.from.row - 1) {
 		return !is_Deadlocked(m, board, whites);
 	}
 
@@ -358,35 +372,35 @@ bool king(const Move &m, Board board, bool whites) {
 
 bool king(const Move &m, Board board) {
 
-	if (m.to.x == m.from.x + 1 && m.to.y == m.from.y) {
+	if (m.to.col == m.from.col + 1 && m.to.row == m.from.row) {
 		return true;
 	}
 
-	if (m.to.x == m.from.x  && m.to.y == m.from.y + 1) {
+	if (m.to.col == m.from.col  && m.to.row == m.from.row + 1) {
 		return true;
 	}
 
-	if (m.to.x == m.from.x + 1 && m.to.y == m.from.y + 1) {
+	if (m.to.col == m.from.col + 1 && m.to.row == m.from.row + 1) {
 		return true;
 	}
 
-	if (m.to.x == m.from.x - 1 && m.to.y == m.from.y) {
+	if (m.to.col == m.from.col - 1 && m.to.row == m.from.row) {
 		return true;
 	}
 
-	if (m.to.x == m.from.x  && m.to.y == m.from.y - 1) {
+	if (m.to.col == m.from.col  && m.to.row == m.from.row - 1) {
 		return true;
 	}
 
-	if (m.to.x == m.from.x - 1 && m.to.y == m.from.y - 1) {
+	if (m.to.col == m.from.col - 1 && m.to.row == m.from.row - 1) {
 		return true;
 	}
 
-	if (m.to.x == m.from.x - 1 && m.to.y == m.from.y + 1) {
+	if (m.to.col == m.from.col - 1 && m.to.row == m.from.row + 1) {
 		return true;
 	}
 
-	if (m.to.x == m.from.x + 1 && m.to.y == m.from.y - 1) {
+	if (m.to.col == m.from.col + 1 && m.to.row == m.from.row - 1) {
 		return true;
 	}
 
@@ -402,45 +416,45 @@ bool queen(const Move &m, Board board) {
 
 bool bishop(const Move& m, Board board) {
 
-	int char_diff = (m.to.x - m.from.x);
-	int int_diff = (m.to.y - m.from.y);
+	int col_diff = (m.to.col - m.from.col);
+	int row_diff = (m.to.row - m.from.row);
 
 	//basically in case of bishop the absolute value of vertical and horizontal shifts must be equal(diagonal move)
-	if (abs(char_diff) != abs(int_diff)) {
+	if (abs(col_diff) != abs(row_diff)) {
 		errorMessage(ErrorMessage::badPieceMovement);
 		return false;
 	}
 
-	else if (int_diff>0 && char_diff>0) {
-		for (int i = 1; i < abs(char_diff); i++) {
-			if (board[m.from.y - i][m.from.x + i] != ' '){
+	else if (row_diff > 0 && col_diff > 0) {
+		for (int i = 1; i < abs(col_diff); i++) {
+			if (board(m.from.row + i, m.from.col + i) != ' '){
 				errorMessage(ErrorMessage::movementOverFigure);
 				return false;
 			}
 		}
 	}
 
-	else if (int_diff<0 && char_diff<0) {
-		for (int i = 1; i < abs(char_diff); i++) {
-			if (board[m.from.y) + i][m.from.x - i] != ' '){
+	else if (row_diff < 0 && col_diff < 0) {
+		for (int i = 1; i < abs(col_diff); i++) {
+			if (board(m.from.row - i, m.from.col - i) != ' '){
 				errorMessage(ErrorMessage::movementOverFigure);
 				return false;
 			}
 		}
 	}
 
-	else if (int_diff<0 && char_diff>0) {
-		for (int i = 1; i<abs(char_diff); i++) {
-			if (board[m.from.y + i][m.from.x + i] != ' ') {
+	else if (row_diff < 0 && col_diff > 0) {
+		for (int i = 1; i<abs(col_diff); i++) {
+			if (board(m.from.row - i, m.from.col + i) != ' ') {
 				errorMessage(ErrorMessage::movementOverFigure);
 				return false;
 			}
 		}
 	}
 
-	else if (int_diff>0 && char_diff<0) {
-		for (int i = 1; i < abs(char_diff); i++) {
-			if (board[m.from.y - i][m.from.x - i] != ' '){
+	else if (row_diff > 0 && col_diff < 0) {
+		for (int i = 1; i < abs(col_diff); i++) {
+			if (board(m.from.row + i, m.from.col - i) != ' '){
 				errorMessage(ErrorMessage::movementOverFigure);
 				return false;
 			}
@@ -452,10 +466,10 @@ bool bishop(const Move& m, Board board) {
 
 bool knight(const Move &m, Board board) {
 
-	if (abs(m.from.x - m.to.x) == 1 && abs(m.from.y - m.to.y == 2))
+	if (abs(m.from.col - m.to.col) == 1 && abs(m.from.row - m.to.row ) == 2)
 		return true;
 
-	if (abs(m.from.x - m.to.x) == 2 && abs(m.from.y - m.to.y == 1))
+	if (abs(m.from.col - m.to.col) == 2 && abs(m.from.row - m.to.row ) == 1)
 		return true;
 
 	errorMessage(ErrorMessage::badPieceMovement);
@@ -464,41 +478,41 @@ bool knight(const Move &m, Board board) {
 
 bool rook(const Move &m, Board board) {
 
-	int char_diff = abs(m.to.x - m.from.x);
-	int int_diff = abs(m.to.y - m.from.y);
+	int col_diff = abs(m.to.col - m.from.col);
+	int row_diff = abs(m.to.row - m.from.row);
 
-	if (m.from.x != m.to.x && m.from.y != m.to.y) {
+	if (m.from.col != m.to.col && m.from.row != m.to.row) {
 		errorMessage(ErrorMessage::badPieceMovement);
 		return false;
 	}
 
-	if (m.from.x > m.to.x) {
-		for (int i = 1; i < char_diff; ++i) {
-			if (board[m.from.y][m.from.x - i] != ' ') {
+	if (m.from.col > m.to.col) {
+		for (int i = 1; i < col_diff; ++i) {
+			if (board(m.from.row, m.from.col - i) != ' ') {
 				errorMessage(ErrorMessage::movementOverFigure);
 				return false;
 			}
 		}
 	}
-	if (m.from.x < m.to.x) {
-		for (int i = 1; i < char_diff; ++i) {
-			if (board[m.from.y][m.from.x + i] != ' ') {
+	if (m.from.col < m.to.col) {
+		for (int i = 1; i < col_diff; ++i) {
+			if (board(m.from.row, m.from.col + i) != ' ') {
 				errorMessage(ErrorMessage::movementOverFigure);
 				return false;
 			}
 		}
 	}
-	if (m.from.y > m.to.y) {
-		for (int i = 1; i < int_diff; ++i) {
-			if (board[m.from.y + i][m.from.x] != ' ') {
+	if (m.from.row > m.to.row) {
+		for (int i = 1; i < row_diff; ++i) {
+			if (board(m.from.row - i, m.from.col) != ' ') {
 				errorMessage(ErrorMessage::movementOverFigure);
 				return false;
 			}
 		}
 	}
-	if (m.from.y < m.to.y) {
-		for (int i = 1; i < int_diff; ++i) {
-			if (board[m.from.y - i][m.from.x] != ' ') {
+	if (m.from.row < m.to.row) {
+		for (int i = 1; i < row_diff; ++i) {
+			if (board(m.from.row + i, m.from.col) != ' ') {
 				errorMessage(ErrorMessage::movementOverFigure);
 				return false;
 			}
@@ -508,37 +522,29 @@ bool rook(const Move &m, Board board) {
 	return true;
 }
 
-
-
 bool pawn(const Move &m, Board board, bool whites) {
-
-	int chFrom = m.from.x;
-	int intFrom = m.from.y;
-	int chTo = m.to.x;
-	int intTo = m.to.y;
 
 	int pawnColor = 1;
 	if (whites) pawnColor = -1;
 
-
 		// pawn moves 1 square forwards
-		if (intTo == intFrom + pawnColor && chTo == chFrom && board[intFrom + pawnColor][chTo] == ' ') {
+		if (m.to.row == m.from.row + pawnColor && m.to.col == m.from.col && board(m.from.row + pawnColor, m.to.col) == ' ') {
 			return true;
 		}
 		// pawn moves crosswise and makes a kill
-		else if (intTo == intFrom + pawnColor && chTo == chFrom + pawnColor && board[intFrom + pawnColor][chFrom + pawnColor] != ' ') {
+		else if (m.to.row == m.from.row + pawnColor && m.to.col == m.from.col + pawnColor && board(m.from.row + pawnColor, m.from.col + pawnColor) != ' ') {
 			return true;
 		}
-		else if (intTo == intFrom + pawnColor && chTo == chFrom - pawnColor && board[intFrom + pawnColor][chFrom - pawnColor] != ' ') {
+		else if (m.to.row == m.from.row + pawnColor && m.to.col == m.from.col - pawnColor && board(m.from.row + pawnColor, m.from.col - pawnColor) != ' ') {
 			return true;
 		}
 
 		//is pawn located in its initial row on the chessboard
-		else if (intFrom == 2 || intFrom == BOARD_SIZE - 1) {
+		else if (m.from.row == 1 || m.from.row == BOARD_SIZE - 2) {
 			//first movement of a pawn, allowed movement by 1 or 2 fields, moves only forwards and kills crosswise
 			//movement by 2 fields allowed for a pawn
-			if (intTo == intFrom + 2* pawnColor && chTo == chFrom && board[intFrom + pawnColor][chFrom] == ' ' &&
-				board[intFrom + 2* pawnColor][chFrom] == ' ') {
+			if (m.to.row == m.from.row + 2* pawnColor && m.to.col == m.from.col && board(m.from.row + pawnColor, m.from.col) == ' ' &&
+				board(m.from.row + 2* pawnColor, m.from.col) == ' ') {
 				return true;
 			}
 		}
@@ -551,7 +557,7 @@ bool pawn(const Move &m, Board board, bool whites) {
 // Check if proper pawn is selected or space is empty
 bool isPieceSelected(const Move &m, Board board, bool whites) {
 
-	char piece = board[m.from.y][m.from.x];
+	char piece = board(m.from.row, m.from.col);
 
 	if (piece >= 'a' && piece <= 'z') {
 		if (whites == true) {
@@ -576,10 +582,10 @@ bool isPieceSelected(const Move &m, Board board, bool whites) {
 	return true;
 }
 
-// Check is pawn can enter selected square
+// Check if pawn can enter selected square
 bool isSquareAvailable(const Move &m, Board board, bool whites) {
 
-	char piece = board[m.from.y][m.from.x];
+	char piece = board(m.to.row, m.to.col);
 
 	if (piece >= 'a' && piece <= 'z') {
 		if (whites == false) {
@@ -602,7 +608,7 @@ bool isSquareAvailable(const Move &m, Board board, bool whites) {
 // Check if move of figure is valid according to chess rules
 bool valid(const Move& m, Board board, bool whites)
 {
-	char piece = board[m.from.y][m.from.x];
+	char piece = board(m.from.row, m.from.col);
 
 	if (!(isPieceSelected(m, board, whites))) {
 		return false;
@@ -653,198 +659,64 @@ bool valid(const Move& m, Board board, bool whites)
 
 bool valid(Move m) {
 
-	if (m.from.x < 'A' || m.from.x >= 'A' + BOARD_SIZE) {
+	if (m.from.col < 0 || m.from.col >= BOARD_SIZE) {
+		errorMessage(ErrorMessage::coordBeyondBoard);
 		return false;
 	}
-	else if (m.to.x < 'A' || m.to.x >= 'A' + BOARD_SIZE) {
+	else if (m.to.col < 0 || m.to.col >= BOARD_SIZE) {
+		errorMessage(ErrorMessage::coordBeyondBoard);
 		return false;
 	}
-	else if (m.from.y < 1 || m.from.y > BOARD_SIZE) {
+	else if (m.from.row < 0 || m.from.row > BOARD_SIZE) {
+		errorMessage(ErrorMessage::coordBeyondBoard);
 		return false;
 	}
-	else if (m.to.y < 1 || m.to.y > BOARD_SIZE) {
+	else if (m.to.row < 0 || m.to.row > BOARD_SIZE) {
+		errorMessage(ErrorMessage::coordBeyondBoard);
+		return false;
+	}
+	return true;
+}
+
+// check if user input is in proper format
+bool valid(string& line)
+{
+	line.erase(std::remove(line.begin(), line.end(), ' '), line.end());
+	transform(line.begin(), line.end(), line.begin(), ::toupper);
+
+	// send player input to ErrorMessage as interpreted by application
+	ErrorMessage::playerInputLine = line;
+
+	if (line.size() != 4) {
+		errorMessage(ErrorMessage::badFormat);
 		return false;
 	}
 	return true;
 }
 
 
-//removes spaces from char*
-void removeSpaces(char* s)
-{
-	char* s2 = s;
-	do {
-		if (*s2 != ' ')
-			*s++ = *s2;
-	} while (*s2++);
-}
-
-
-// check if user input is in proper format
-bool valid(char line[])
-{
-	int length = 0;
-	int i = 0, i1 = 0;
-	removeSpaces(line);
-
-	//length of array with characters
-	while (line[length] != '\0') {
-		length++;
-	}
-
-	//replace small letters into capital letters, no verification yet as to whether it is within BOARD_SIZE
-	for (int j = 0; j<length; j++) {
-		if (line[j] >= 'a' && line[j] <= 'z') {
-			line[j] = toupper(line[j]);
-		}
-	}
-
-	while (line[i] >= 'A' && line[i] <= 'Z') {
-		i++;
-	}
-
-	if (i == 0) {
-		errorMessage(ErrorMessage::badFormat);
-		return false;
-	}
-	else {
-		i1 = i;
-	}
-
-	while (line[i] >= '0' && line[i] <= '9') {
-		i++;
-	}
-
-	if (i == i1) {
-		errorMessage(ErrorMessage::badFormat);
-		return false;
-	}
-	else
-	{
-		i1 = i;
-	}
-
-	while (line[i] >= 'A' && line[i] <= 'Z') {
-		i++;
-	}
-
-	if (i == i1) {
-		errorMessage(ErrorMessage::badFormat);
-		return false;
-	}
-	else {
-		i1 = i;
-	}
-
-	while (line[i] >= '0' && line[i] <= '9') {
-		i++;
-	}
-
-	if (i == i1) {
-		errorMessage(ErrorMessage::badFormat);
-		return false;
-	}
-	else
-	{
-		return true;
-	}
-
-
-}
-
-
-
-// change user imput into format: 'A2H5' and return structure variable with move informations
-Move readMove(const char line[])
-{
-	char fromChars[20] = { ' ' };
-	char toChars[20] = { ' ' };
-	int fromInt = 0;
-	int toInt = 0;
-	int counter = 0;
-	int i = 0;
-
-
-	//read first symbol (letters)
-	while (line[i] >= 'A' && line[i]<'Z') {
-		if (line[i] == ' ') {
-			i++;
-		}
-		fromChars[counter] = line[i];
-		counter++;
-		line++;
-	}
-
-	//read second symbol (integer)
-	while (line[i] >= '0' && line[i]<'9') {
-		if (line[i] == ' ') {
-			i++;
-		}
-		fromInt = fromInt * 10 + (line[i] - '0');
-		i++;
-	}
-
-	counter = 0;
-	//read third symbol (letters)
-	while (line[i] >= 'A' && line[i]<'Z') {
-		if (line[i] == ' ') {
-			i++;
-		}
-		toChars[counter] = line[i];
-		counter++;
-		i++;
-	}
-
-	//read fourth symbol (integer)
-	while (line[i] >= '0' && line[i]<'9') {
-		if (line[i] == ' ') {
-			i++;
-		}
-		toInt = toInt * 10 + (line[i] - '0');
-		i++;
-	}
-
-	Move move();
-	move.from.x = fromChars[0];
-	move.from.y = from.y;
-	move.to.x = toChars[0];
-	move.to.y = toInt;
-
-	return move;
-}
-
 Move getMove(bool whites)
 {
 	Move m;
-	string line;
-	char lineStr[1024];
+	string line = "";
 	do {
-		clearLine(21);
 		if (whites)
 			cout << "White turn:" << endl;
 		else
 			cout << "Black turn:" << endl;
 		
 		getline(cin, line);
-		clearLine(22);
-		strcpy_s(lineStr, line.c_str(), 1024);
-	} while (!valid(lineStr) || !valid((m = readMove(lineStr))));
-	return m;
-}
+	} while (!valid(line));
 
-void strcpy_s(char str[1024], const char *c_str, int i) {
-	for (int p = 0; p<1023; p++) {
-		str[p] = c_str[p];
-	}
-	str[1023] = '\0';
+	return m = Move(line);
 }
-
 
 void Board::makeMove(const Move& m)
 {
-	char figure = board[m.from.y][m.from.x];
-	board[m.from.y][m.from.x] = ' ';
-	board[m.to.y][m.to.x] = figure;
+	Board board = *this;
+	char figure = board(m.from.row, m.from.col);
+	board(m.from.row, m.from.col) = ' ';
+	board(m.to.row, m.to.col) = figure;
 }
 
 void doMove(Board board, bool whites)
@@ -856,21 +728,18 @@ void doMove(Board board, bool whites)
 		} while (!valid(m));
 	} while (!valid(m, board, whites));
 	board.makeMove(m);
-
 }
 
 
 //displays board - takes array board[BOARD_SIZE][BOARD_SIZE]
 // and reads its contents, and displays on the screen
-void Board::display(char(*board)[8])
+void Board::display() 
 {
-	//variable letter is used in a loop to display letters representing columns
-	//the loop automatically displays chars, simpler loops returned intergers instead of chars
-
-	char letter;
-	int i, j;
-	char k;
-
+	Board board = *this;
+	char letter = 0;
+	int i = 0;
+	int j = 0;
+	char k = 0;
 	//row with letters that reprezenting headers of columns
 	cout << "   ";
 	for (letter = 'A'; letter < 'A' + BOARD_SIZE; letter++)
@@ -884,20 +753,20 @@ void Board::display(char(*board)[8])
 	}
 	cout << "+   \n";
 
-	//now we take the array that keeps actual positions of figures and display it on the chessboard
+	// take the array that keeps actual positions of figures and display it on the chessboard
 
 	for (i = 0; i < BOARD_SIZE; i++) {
 
 		cout << " " << BOARD_SIZE - i << " ";
 
 		for (j = 0; j < BOARD_SIZE; j++) {
-			cout << " " << "|" << " " << board[i][j];
+			cout << " " << "|" << " " << board(i, j);
 		}
 		cout << " " << "|" << " " << BOARD_SIZE - i << " ";
 		cout << "\n";
 
 
-		//now we delimit each row with figures with a delimiter "    +---+---+---+---+---+---+---+---+   \n";
+		// delimit each row with figures with a delimiter "    +---+---+---+---+---+---+---+---+   \n";
 		cout << "    ";
 		for (k = 'A'; k<'A' + BOARD_SIZE; k++) {
 			cout << "+---";
@@ -906,9 +775,7 @@ void Board::display(char(*board)[8])
 
 	}
 
-	//finally the bottom letters
-
-	//row with letters that reprezenting headers of columns
+	// row with letters that reprezenting headers of columns
 	cout << "   ";
 	for (letter = 'A'; letter < 'A' + BOARD_SIZE; letter++)
 		cout << "   " << letter;
@@ -916,33 +783,23 @@ void Board::display(char(*board)[8])
 
 }
 
-void Board::display() 
+void Board::init()
 {
-	display((char(*)[8])board);
-}
-
-void Board::init(char(*board)[8])
-{
-	clearScreen();
+	Board board = *this;
 	const char figuresRow[BOARD_SIZE] = { 'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r' };
 
-	memset(board, ' ', sizeof(char) * BOARD_SIZE * BOARD_SIZE);
+	memset(this->board, ' ', sizeof(char) * BOARD_SIZE * BOARD_SIZE);
+	for (unsigned i = 0; i < BOARD_SIZE; i++)
+		board(0, i) = figuresRow[i];
 
 	for (unsigned i = 0; i < BOARD_SIZE; i++)
-		board[0][i] = figuresRow[i];
+		board(1, i) = 'p';
 
 	for (unsigned i = 0; i < BOARD_SIZE; i++)
-		board[1][i] = 'p';
+		board(BOARD_SIZE - 2, i) = 'P';
 
 	for (unsigned i = 0; i < BOARD_SIZE; i++)
-		board[BOARD_SIZE - 2][i] = 'P';
-
-	for (unsigned i = 0; i < BOARD_SIZE; i++)
-		board[BOARD_SIZE - 1][i] = toupper(figuresRow[i]);
-}
-
-void Board::init() {
-	init((char(*)[8])board);
+		board(BOARD_SIZE - 1, i) = toupper(figuresRow[i]);
 }
 
 bool endOfGame(Board board)
