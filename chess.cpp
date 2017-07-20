@@ -20,7 +20,12 @@
 
 /*
 TODO:
-Dostosować funkcję is_Deadlocked(), powinna się tym zająć osoba która sworzyła funkcję
+1. Dokończyć validacje figur, głównie została królowa która powinna dziedziczyć po wieży lub 
+2. Dokończyć funkcje validującą Board, tak aby uwzględniała walidacje figur oraz walidacje pól pomiędzy ruchem
+3. Zrobić walidacje pól pomiędzy ruchem, należy wykorzystać listę vector<Coord> list która jest uzupełniona polami do sprawdzenia.
+	Dla większości figur jeśli pole nie jest puste to oznacza błąd, za wyjątkiem pionka: jeśli pionek wykona ruch na ukos to musi być tam pionek przeciwnika, jeśli 2 do przodu to sprawdza tak jak reszte figur.
+4. Dostosowac funkcję sprawdzającą szachowanie
+5. Dostosować zwracanie błędów dla gracza (w tej chwili zostały usunięte z funkcji walidująych figury)
 
 */
 
@@ -34,6 +39,7 @@ Dostosować funkcję is_Deadlocked(), powinna się tym zająć osoba która swor
 #include <iomanip>
 #include <string>
 #include <algorithm>
+#include <vector>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -67,12 +73,28 @@ const int BOARD_SIZE = 8;
 
 //GLOBAL VARIABLES ---------------------------------------------------------------------------------
 
-//char board[BOARD_SIZE][BOARD_SIZE] = { ' ' };
+class Board;
+class Figure;
+class King;
+class Queen;
+class Bishop;
+class Knight;
+class Rook;
+class Pawn;
 
+enum class BoardOps {
+	CLEAR_BOARD,
+	INIT_BOARD,
+};
 
 struct Coord {
 	int row;
 	int col;
+	Coord() {}
+	Coord(int row, int col){
+		Coord::row = row;
+		Coord::col = col;
+	}
 };
 
 struct Move {
@@ -92,47 +114,275 @@ struct Move {
 	}
 };
 
+
+
+class Figure {
+	char name;
+public:
+
+	virtual bool valid(const Move &m, vector<Coord>& list) {
+		cout << "Something went wrong..." << endl; 
+		return false; 
+	};
+
+	char& operator*() { return name; }
+
+
+	Figure& operator=(const char name) {
+		this->name = name;
+		return *this;
+	}
+
+	friend ostream& operator<<(ostream& os, const Figure& figure);
+};
+
+class King : Figure {
+public:
+	bool valid(const Move &m, vector<Coord>& list) {
+
+		if (m.to.col == m.from.col + 1 && m.to.row == m.from.row) {
+			return true;
+		}
+
+		if (m.to.col == m.from.col  && m.to.row == m.from.row + 1) {
+			return true;
+		}
+
+		if (m.to.col == m.from.col + 1 && m.to.row == m.from.row + 1) {
+			return true;
+		}
+
+		if (m.to.col == m.from.col - 1 && m.to.row == m.from.row) {
+			return true;
+		}
+
+		if (m.to.col == m.from.col  && m.to.row == m.from.row - 1) {
+			return true;
+		}
+
+		if (m.to.col == m.from.col - 1 && m.to.row == m.from.row - 1) {
+			return true;
+		}
+
+		if (m.to.col == m.from.col - 1 && m.to.row == m.from.row + 1) {
+			return true;
+		}
+
+		if (m.to.col == m.from.col + 1 && m.to.row == m.from.row - 1) {
+			return true;
+		}
+
+		return false;
+	}
+};
+
+class Queen : Figure{
+
+};
+
+class Bishop : Figure {
+public:
+	bool valid(const Move &m, vector<Coord>& list) {
+		int col_diff = (m.to.col - m.from.col);
+		int row_diff = (m.to.row - m.from.row);
+
+		//basically in case of bishop the absolute value of vertical and horizontal shifts must be equal(diagonal move)
+		if (abs(col_diff) != abs(row_diff)) {
+			return false;
+		}
+
+		else if (row_diff > 0 && col_diff > 0) {
+			for (int i = 1; i < abs(col_diff); i++) {
+				list.push_back( Coord(m.from.row + i, m.from.col + i) );
+			}
+		}
+
+		else if (row_diff < 0 && col_diff < 0) {
+			for (int i = 1; i < abs(col_diff); i++) {
+				list.push_back( Coord(m.from.row - i, m.from.col - i) );
+			}
+		}
+
+		else if (row_diff < 0 && col_diff > 0) {
+			for (int i = 1; i<abs(col_diff); i++) {
+				list.push_back (Coord(m.from.row - i, m.from.col + i) );
+			}
+		}
+
+		else if (row_diff > 0 && col_diff < 0) {
+			for (int i = 1; i < abs(col_diff); i++) {
+				list.push_back( Coord(m.from.row + i, m.from.col - i) );
+			}
+		}
+
+		return true;
+	}
+};
+
+class Knight : Figure {
+public:
+	bool valid(const Move &m, vector<Coord>& list) {
+
+		if (abs(m.from.col - m.to.col) == 1 && abs(m.from.row - m.to.row) == 2)
+			return true;
+
+		if (abs(m.from.col - m.to.col) == 2 && abs(m.from.row - m.to.row) == 1)
+			return true;
+		return false;
+	}
+};
+
+class Rook : Figure {
+public:
+	bool valid(const Move &m, vector<Coord>& list) {
+
+		int col_diff = abs(m.to.col - m.from.col);
+		int row_diff = abs(m.to.row - m.from.row);
+
+		if (m.from.col != m.to.col && m.from.row != m.to.row) {
+			return false;
+		}
+
+		if (m.from.col > m.to.col) {
+			for (int i = 1; i < col_diff; ++i) {
+				list.push_back( Coord(m.from.row, m.from.col - i) );
+			}
+		}
+		if (m.from.col < m.to.col) {
+			for (int i = 1; i < col_diff; ++i) {
+				list.push_back( Coord(m.from.row, m.from.col + i) );
+			}
+		}
+		if (m.from.row > m.to.row) {
+			for (int i = 1; i < row_diff; ++i) {
+				list.push_back( Coord(m.from.row - i, m.from.col) );
+			}
+		}
+		if (m.from.row < m.to.row) {
+			for (int i = 1; i < row_diff; ++i) {
+				list.push_back( Coord(m.from.row + i, m.from.col) );
+			}
+		}
+
+		return true;
+	}
+};
+
+class Pawn : Figure {
+public:
+	bool valid(const Move &m, vector<Coord>& list) {
+
+		int pawnColor = 1;
+		if (Board::getTurn()) pawnColor = -1;
+
+		// pawn moves 1 square forwards
+		if (m.to.row == m.from.row + pawnColor && m.to.col == m.from.col) {
+			list.push_back( Coord(m.from.row + pawnColor, m.from.col) );
+			return true;
+		}
+		// pawn moves crosswise and makes a kill
+		else if (m.to.row == m.from.row + pawnColor && m.to.col == m.from.col + 1) {
+			list.push_back( Coord(m.from.row + pawnColor, m.from.col + 1) );
+			return true;
+		}
+		else if (m.to.row == m.from.row + pawnColor && m.to.col == m.from.col - 1) {
+			list.push_back( Coord(m.from.row + pawnColor, m.from.col - 1) );
+			return true;
+		}
+
+		//is pawn located in its initial row on the chessboard
+		else if (m.from.row == 1 || m.from.row == BOARD_SIZE - 2) {
+			//first movement of a pawn, allowed movement by 1 or 2 fields, moves only forwards and kills crosswise
+			//movement by 2 fields allowed for a pawn
+			if (m.to.row == m.from.row + 2 * pawnColor && m.to.col == m.from.col) {
+				list.push_back( Coord(m.from.row + pawnColor, m.from.col) );
+				list.push_back( Coord(m.from.row + 2 * pawnColor, m.from.col) );
+				return true;
+			}
+		}
+
+		return false;
+	}
+};
+
+ostream& operator<<(ostream& os, const Figure& figure) {
+	os << figure.name;
+	return os;
+}
+
 class Board {
 
 private:
 	//char board[BOARD_SIZE][BOARD_SIZE] = { ' ' };
-	char* board;
+	Figure* board;
+	static bool whites;
 
-public:
-	Board(int boardSize) { board = new char[boardSize * boardSize]; }
-
-	void display();
+	void display(ostream& os) const;
+	bool reverse();
 	void init();
 	void makeMove(const Move& m);
+	bool isPieceSelected(const Move &m);
+	bool isSquareAvailable(const Move &m);
 
-	char& operator()(int x, int y);
-	char operator()(int x, int y) const;
+public:
+	Board(int boardSize) { board = new Figure[boardSize * boardSize]; whites = true; }
+
+	void changeTurn() { whites = !whites; }
+
+	// true = whites, false = blacks
+	static bool getTurn() { return whites; }
+
+
+	
+	bool valid(const Move& m);
+
+	Board& operator=(const BoardOps boardOps);
+	friend ostream& operator<<(ostream& os, const Board& board);
+	Board& operator!();
+	Board& operator+=(const Move&);
+	Figure& operator()(int x, int y);
+	Figure operator()(int x, int y) const;
 };
 
-char& Board::operator()(int row, int col) {
-	return *(board + (col + row * BOARD_SIZE));
-}
 
-char Board::operator()(int row, int col) const {
-	return *(board + (col + row * BOARD_SIZE));
-}
 
-/*
-struct Move {
-	char fromCh;
-	int from.row;
-	char toCh;
-	int toInt;
 
-	void Fill(char fromCh, int from.row, char toCh, int toInt) {
-		this->fromCh = fromCh;
-		this->from.row = from.row;
-		this->toCh = toCh;
-		this->toInt = toInt;
+Board& Board::operator=(const BoardOps boardOps) {
+	switch (boardOps) {
+	case BoardOps::CLEAR_BOARD:
+		break;
+	case BoardOps::INIT_BOARD:
+		init();
+		break;
 	}
+	return *this;
+}
 
-};
-*/
+ostream& operator<<(ostream& os, const Board& board) {
+	clearScreen();
+	board.display(os);
+	return os;
+}
+
+Board& Board::operator!() {
+	reverse();
+	return *this;
+}
+
+Board& Board::operator+=(const Move& m) {
+	makeMove(m);
+	return *this;
+}
+
+Figure& Board::operator()(int row, int col) {
+	return *(board + (col + row * BOARD_SIZE));
+}
+
+Figure Board::operator()(int row, int col) const {
+	return *(board + (col + row * BOARD_SIZE));
+}
+
+
 //GLOBAL FUNCTIONS ---------------------------------------------------------------------------------
 
 #ifdef _WIN32
@@ -330,244 +580,22 @@ bool is_Deadlocked(const Move &m, Board board, bool whites) {
 	return false;
 }
 
-bool king(const Move &m, Board board, bool whites) {
-
-	//step one- checking if the move is within king's range
-	if (m.to.col == m.from.col + 1 && m.to.row == m.from.row) {
-		//step two- checking if king is deadlocked
-		return !is_Deadlocked(m, board, whites);
-	}
-
-	if (m.to.col == m.from.col  && m.to.row == m.from.row + 1) {
-		return !is_Deadlocked(m, board, whites);
-	}
-
-	if (m.to.col == m.from.col + 1 && m.to.row == m.from.row + 1) {
-		return !is_Deadlocked(m, board, whites);
-	}
-
-	if (m.to.col == m.from.col - 1 && m.to.row == m.from.row) {
-		return !is_Deadlocked(m, board, whites);
-	}
-
-	if (m.to.col == m.from.col  && m.to.row == m.from.row - 1) {
-		return !is_Deadlocked(m, board, whites);
-	}
-
-	if (m.to.col == m.from.col - 1 && m.to.row == m.from.row - 1) {
-		return !is_Deadlocked(m, board, whites);
-	}
-
-	if (m.to.col == m.from.col - 1 && m.to.row == m.from.row + 1) {
-		return !is_Deadlocked(m, board, whites);
-	}
-
-	if (m.to.col == m.from.col + 1 && m.to.row == m.from.row - 1) {
-		return !is_Deadlocked(m, board, whites);
-	}
-
-	errorMessage(ErrorMessage::badPieceMovement);
-	return false;
-}
-
-bool king(const Move &m, Board board) {
-
-	if (m.to.col == m.from.col + 1 && m.to.row == m.from.row) {
-		return true;
-	}
-
-	if (m.to.col == m.from.col  && m.to.row == m.from.row + 1) {
-		return true;
-	}
-
-	if (m.to.col == m.from.col + 1 && m.to.row == m.from.row + 1) {
-		return true;
-	}
-
-	if (m.to.col == m.from.col - 1 && m.to.row == m.from.row) {
-		return true;
-	}
-
-	if (m.to.col == m.from.col  && m.to.row == m.from.row - 1) {
-		return true;
-	}
-
-	if (m.to.col == m.from.col - 1 && m.to.row == m.from.row - 1) {
-		return true;
-	}
-
-	if (m.to.col == m.from.col - 1 && m.to.row == m.from.row + 1) {
-		return true;
-	}
-
-	if (m.to.col == m.from.col + 1 && m.to.row == m.from.row - 1) {
-		return true;
-	}
-
-	return false;
-}
-
-bool queen(const Move &m, Board board) {
-	if (rook(m, board) || bishop(m, board))
-		return true;
-	else
-		return false;
-}
-
-bool bishop(const Move& m, Board board) {
-
-	int col_diff = (m.to.col - m.from.col);
-	int row_diff = (m.to.row - m.from.row);
-
-	//basically in case of bishop the absolute value of vertical and horizontal shifts must be equal(diagonal move)
-	if (abs(col_diff) != abs(row_diff)) {
-		errorMessage(ErrorMessage::badPieceMovement);
-		return false;
-	}
-
-	else if (row_diff > 0 && col_diff > 0) {
-		for (int i = 1; i < abs(col_diff); i++) {
-			if (board(m.from.row + i, m.from.col + i) != ' '){
-				errorMessage(ErrorMessage::movementOverFigure);
-				return false;
-			}
-		}
-	}
-
-	else if (row_diff < 0 && col_diff < 0) {
-		for (int i = 1; i < abs(col_diff); i++) {
-			if (board(m.from.row - i, m.from.col - i) != ' '){
-				errorMessage(ErrorMessage::movementOverFigure);
-				return false;
-			}
-		}
-	}
-
-	else if (row_diff < 0 && col_diff > 0) {
-		for (int i = 1; i<abs(col_diff); i++) {
-			if (board(m.from.row - i, m.from.col + i) != ' ') {
-				errorMessage(ErrorMessage::movementOverFigure);
-				return false;
-			}
-		}
-	}
-
-	else if (row_diff > 0 && col_diff < 0) {
-		for (int i = 1; i < abs(col_diff); i++) {
-			if (board(m.from.row + i, m.from.col - i) != ' '){
-				errorMessage(ErrorMessage::movementOverFigure);
-				return false;
-			}
-		}
-	}
-
-	return true;
-}
-
-bool knight(const Move &m, Board board) {
-
-	if (abs(m.from.col - m.to.col) == 1 && abs(m.from.row - m.to.row ) == 2)
-		return true;
-
-	if (abs(m.from.col - m.to.col) == 2 && abs(m.from.row - m.to.row ) == 1)
-		return true;
-
-	errorMessage(ErrorMessage::badPieceMovement);
-	return false;
-}
-
-bool rook(const Move &m, Board board) {
-
-	int col_diff = abs(m.to.col - m.from.col);
-	int row_diff = abs(m.to.row - m.from.row);
-
-	if (m.from.col != m.to.col && m.from.row != m.to.row) {
-		errorMessage(ErrorMessage::badPieceMovement);
-		return false;
-	}
-
-	if (m.from.col > m.to.col) {
-		for (int i = 1; i < col_diff; ++i) {
-			if (board(m.from.row, m.from.col - i) != ' ') {
-				errorMessage(ErrorMessage::movementOverFigure);
-				return false;
-			}
-		}
-	}
-	if (m.from.col < m.to.col) {
-		for (int i = 1; i < col_diff; ++i) {
-			if (board(m.from.row, m.from.col + i) != ' ') {
-				errorMessage(ErrorMessage::movementOverFigure);
-				return false;
-			}
-		}
-	}
-	if (m.from.row > m.to.row) {
-		for (int i = 1; i < row_diff; ++i) {
-			if (board(m.from.row - i, m.from.col) != ' ') {
-				errorMessage(ErrorMessage::movementOverFigure);
-				return false;
-			}
-		}
-	}
-	if (m.from.row < m.to.row) {
-		for (int i = 1; i < row_diff; ++i) {
-			if (board(m.from.row + i, m.from.col) != ' ') {
-				errorMessage(ErrorMessage::movementOverFigure);
-				return false;
-			}
-		}
-	}
-
-	return true;
-}
-
-bool pawn(const Move &m, Board board, bool whites) {
-
-	int pawnColor = 1;
-	if (whites) pawnColor = -1;
-
-		// pawn moves 1 square forwards
-		if (m.to.row == m.from.row + pawnColor && m.to.col == m.from.col && board(m.from.row + pawnColor, m.to.col) == ' ') {
-			return true;
-		}
-		// pawn moves crosswise and makes a kill
-		else if (m.to.row == m.from.row + pawnColor && m.to.col == m.from.col + pawnColor && board(m.from.row + pawnColor, m.from.col + pawnColor) != ' ') {
-			return true;
-		}
-		else if (m.to.row == m.from.row + pawnColor && m.to.col == m.from.col - pawnColor && board(m.from.row + pawnColor, m.from.col - pawnColor) != ' ') {
-			return true;
-		}
-
-		//is pawn located in its initial row on the chessboard
-		else if (m.from.row == 1 || m.from.row == BOARD_SIZE - 2) {
-			//first movement of a pawn, allowed movement by 1 or 2 fields, moves only forwards and kills crosswise
-			//movement by 2 fields allowed for a pawn
-			if (m.to.row == m.from.row + 2* pawnColor && m.to.col == m.from.col && board(m.from.row + pawnColor, m.from.col) == ' ' &&
-				board(m.from.row + 2* pawnColor, m.from.col) == ' ') {
-				return true;
-			}
-		}
-		errorMessage(ErrorMessage::badPieceMovement);
-		return false;
-}
-
-
 
 // Check if proper pawn is selected or space is empty
-bool isPieceSelected(const Move &m, Board board, bool whites) {
-
-	char piece = board(m.from.row, m.from.col);
+bool Board::isPieceSelected(const Move &m) 
+{
+	Board board = *this;
+	char piece = *board(m.from.row, m.from.col);
 
 	if (piece >= 'a' && piece <= 'z') {
-		if (whites == true) {
+		if (Board::getTurn() == true) {
 			errorMessage(ErrorMessage::wrongColorSelected);
 			return false;
 		}
 	}
 
 	if (piece >= 'A' && piece <= 'Z') {
-		if (whites == false) {
+		if (Board::getTurn() == false) {
 			errorMessage(ErrorMessage::wrongColorSelected);
 			return false;
 		}
@@ -583,18 +611,19 @@ bool isPieceSelected(const Move &m, Board board, bool whites) {
 }
 
 // Check if pawn can enter selected square
-bool isSquareAvailable(const Move &m, Board board, bool whites) {
-
-	char piece = board(m.to.row, m.to.col);
+bool Board::isSquareAvailable(const Move &m) 
+{
+	Board board = *this;
+	char piece = *board(m.to.row, m.to.col);
 
 	if (piece >= 'a' && piece <= 'z') {
-		if (whites == false) {
+		if (Board::getTurn() == false) {
 			errorMessage(ErrorMessage::squareIsOccupied);
 			return false;
 		}
 	}
 	else if (piece >= 'A' && piece <= 'Z') {
-		if (whites == true) {
+		if (Board::getTurn() == true) {
 			errorMessage(ErrorMessage::squareIsOccupied);
 			return false;
 		}
@@ -606,52 +635,18 @@ bool isSquareAvailable(const Move &m, Board board, bool whites) {
 
 
 // Check if move of figure is valid according to chess rules
-bool valid(const Move& m, Board board, bool whites)
+bool Board::valid(const Move& m)
 {
-	char piece = board(m.from.row, m.from.col);
-
-	if (!(isPieceSelected(m, board, whites))) {
+	Board board = *this;
+	Figure figure = board(m.from.row, m.from.col);
+	if (!(isPieceSelected(m))) {
 		return false;
 	}
 
-	if (!(isSquareAvailable(m, board, whites)))
+	if (!(isSquareAvailable(m)))
 		return false;
 
-	switch (tolower(piece)) {
 
-	case 'p':
-		if (!(pawn(m, board, whites))) {
-			return false;
-		}
-		break;
-	case 'r':
-		if (!(rook(m, board))) {
-			return false;
-		}
-		break;
-	case 'n':
-		if (!(knight(m, board))) {
-			return false;
-		}
-		break;
-	case 'b':
-		if (!(bishop(m, board))) {
-			return false;
-		}
-		break;
-	case 'q':
-		if (!(queen(m, board))) {
-			return false;
-		}
-		break;
-	case 'k':
-		if (!(king(m, board, whites))) {
-			errorMessage(ErrorMessage::badPieceMovement);
-			return false;
-		}
-		break;
-
-	}
 
 	return true;
 }
@@ -695,12 +690,12 @@ bool valid(string& line)
 }
 
 
-Move getMove(bool whites)
+Move getMove()
 {
 	Move m;
 	string line = "";
 	do {
-		if (whites)
+		if (Board::getTurn())
 			cout << "White turn:" << endl;
 		else
 			cout << "Black turn:" << endl;
@@ -711,30 +706,58 @@ Move getMove(bool whites)
 	return m = Move(line);
 }
 
+bool Board::reverse()
+{
+	Board board = *this;
+	const char figuresRowLow[BOARD_SIZE] = { 'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r' };
+	const char figuresRowUp[BOARD_SIZE] = { 'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R' };
+
+	for (unsigned i = 0; i < BOARD_SIZE; i++) {
+		if (tolower(*board(0, i)) != figuresRowLow[i] || tolower(*board(BOARD_SIZE - 1, i)) != figuresRowLow[i])
+			return false;
+		if (tolower(*board(1, i)) != 'p' || tolower(*board(BOARD_SIZE - 2, i)) != 'p')
+			return false;
+	}
+
+	if (*board(0, 0) == 'r') {
+		for (unsigned i = 0; i < BOARD_SIZE; i++)
+			board(0, i) = figuresRowUp[i];
+		for (unsigned i = 0; i < BOARD_SIZE; i++)
+			board(1, i) = 'P';
+
+		for (unsigned i = 0; i < BOARD_SIZE; i++)
+			board(BOARD_SIZE - 1, i) = figuresRowLow[i];
+		for (unsigned i = 0; i < BOARD_SIZE; i++)
+			board(BOARD_SIZE - 2, i) = 'p';
+	}
+	else {
+		for (unsigned i = 0; i < BOARD_SIZE; i++)
+			board(0, i) = figuresRowLow[i];
+		for (unsigned i = 0; i < BOARD_SIZE; i++)
+			board(1, i) = 'p';
+
+		for (unsigned i = 0; i < BOARD_SIZE; i++)
+			board(BOARD_SIZE - 1, i) = figuresRowUp[i];
+		for (unsigned i = 0; i < BOARD_SIZE; i++)
+			board(BOARD_SIZE - 2, i) = 'P';
+	}
+
+	return true;
+}
+
 void Board::makeMove(const Move& m)
 {
 	Board board = *this;
-	char figure = board(m.from.row, m.from.col);
+	char figure = *board(m.from.row, m.from.col);
 	board(m.from.row, m.from.col) = ' ';
 	board(m.to.row, m.to.col) = figure;
 }
 
-void doMove(Board board, bool whites)
-{
-	Move m;
-	do {
-		do {
-			m = getMove(whites);
-		} while (!valid(m));
-	} while (!valid(m, board, whites));
-	board.makeMove(m);
-}
-
-
 //displays board - takes array board[BOARD_SIZE][BOARD_SIZE]
 // and reads its contents, and displays on the screen
-void Board::display() 
+void Board::display(ostream& os) const
 {
+	clearScreen();
 	Board board = *this;
 	char letter = 0;
 	int i = 0;
@@ -809,14 +832,23 @@ bool endOfGame(Board board)
 
 int main()
 {
-	Board board = Board(8);
-	board.init();
-	bool whites = true;
-	do {
-		board.display();
-		doMove(board, whites);
-		whites = !whites;
-		clearScreen();
-	} while (!endOfGame(board));
+	Board b(8);
+	b = BoardOps::INIT_BOARD;
+	cout << b;
+
+	Move m;
+	while (true) {
+		do {
+			do {
+				m = getMove();
+			} while (!valid(m));
+		} while (!b.valid(m));
+		
+		b += m;
+		cout << b;
+		b.changeTurn();
+	}
+	cout << "Press Enter to Continue";
+	cin.ignore();
 
 }
