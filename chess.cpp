@@ -855,17 +855,28 @@ void Board::init()
     const char figuresRow[BOARD_SIZE] = { 'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r' };
     
     //memset(this->board, ' ', sizeof(char) * BOARD_SIZE * BOARD_SIZE);
-    for (unsigned i = 0; i < BOARD_SIZE; i++)
+    for (unsigned i = 0; i < BOARD_SIZE; i++) {
         board(0, i) = figuresRow[i];
+    }
     
-    for (unsigned i = 0; i < BOARD_SIZE; i++)
+    for (unsigned i = 0; i < BOARD_SIZE; i++) {
         board(1, i) = 'p';
+    }
     
-    for (unsigned i = 0; i < BOARD_SIZE; i++)
+    for(unsigned i=0; i<BOARD_SIZE; i++){
+        for(unsigned j=2; j<BOARD_SIZE-2; j++){
+            board(j,i) = ' ';
+        }
+    }
+    
+    
+    for (unsigned i = 0; i < BOARD_SIZE; i++) {
         board(BOARD_SIZE - 2, i) = 'P';
+    }
     
-    for (unsigned i = 0; i < BOARD_SIZE; i++)
+    for (unsigned i = 0; i < BOARD_SIZE; i++) {
         board(BOARD_SIZE - 1, i) = toupper(figuresRow[i]);
+    }
 }
 
 bool endOfGame(Board board)
