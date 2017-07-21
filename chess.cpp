@@ -709,7 +709,7 @@ public:
 
 
 // Check if move of figure is valid according to chess rules
-bool Board::valid(const Move& m)
+bool Board::valid(const Move& m)//doloz argument errormessages on albo off
 {
     Board board = *this;
     vector<Coord> list;
@@ -726,6 +726,21 @@ bool Board::valid(const Move& m)
         return false;
     
     //początek dopisywania kodu walidującego pola na szachownicy
+    int pion = m.to.row - m.from.row;
+    int poziom = m.to.col - m.from.col;
+    char fig = *board(m.from.row, m.from.col);
+    if(poziom==0){
+        
+    }
+    else if(pion==0){
+        
+    }
+    else if(!(fig=='n') && !(fig=='N')){
+        
+    }
+    else{
+        
+    }
     //komcepcja - dodanie metod
     //metody te sprawdzają czy w pionie, poziomie lub na skos pomiedzy startem a koncem nie ma innych pionow
     //dla skoczka tylko koncowe pole sprawdzamy bo skoczek nie moze bic swoich wlasnych pionow
