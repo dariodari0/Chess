@@ -358,11 +358,12 @@ public:
 
 
 
+
 class Board {
     
 private:
     Figure* board;
-    static bool whites;
+    
     void display(ostream& os) const;
     bool reverse();
     void init();
@@ -370,8 +371,9 @@ private:
     bool isPieceSelected(const Move &m);
     bool isSquareAvailable(const Move &m);
     bool valid(string& line);
-    
+    static bool whites;
 public:
+    
     Board(int boardSize) { board = new Figure[boardSize * boardSize]; whites = true; }
     void changeTurn() { whites = !whites; }
     Move getMove();
@@ -388,6 +390,7 @@ public:
 
 
 bool Board::whites=true;
+
 
 // Check if proper pawn is selected or space is empty
 bool Board::isPieceSelected(const Move &m)
@@ -416,6 +419,7 @@ bool Board::isPieceSelected(const Move &m)
     
     return true;
 }
+
 
 
 // Check if pawn can enter selected square
@@ -453,25 +457,30 @@ Board& Board::operator=(const BoardOps boardOps) {
     return *this;
 }
 
+
 ostream& operator<<(ostream& os, const Board& board) {
     clearScreen();
     board.display(os);
     return os;
 }
 
+
 Board& Board::operator!() {
     reverse();
     return *this;
 }
+
 
 Board& Board::operator+=(const Move& m) {
     makeMove(m);
     return *this;
 }
 
+
 Figure& Board::operator()(int row, int col) {
     return *(board + (col + row * BOARD_SIZE));
 }
+
 
 Figure Board::operator()(int row, int col) const {
     return *(board + (col + row * BOARD_SIZE));
@@ -479,6 +488,169 @@ Figure Board::operator()(int row, int col) const {
 
 
 
+
+// check if user input is in proper format
+bool Board::valid(string& line)
+{
+    line.erase(std::remove(line.begin(), line.end(), ' '), line.end());
+    transform(line.begin(), line.end(), line.begin(), ::toupper);
+    
+    // send player input to ErrorMessage as interpreted by application
+    ErrorMessage::playerInputLine = line;
+    
+    if (line.size() != 4) {
+        errorMessage(ErrorMessage::badFormat);
+        return false;
+    }
+    return true;
+}
+
+
+Move Board::getMove()
+{
+    Move m;
+    string line = "";
+    do {
+        if (Board::getTurn())
+            cout << "White turn:" << endl;
+        else
+            cout << "Black turn:" << endl;
+        
+        getline(cin, line);
+    } while (!valid(line));
+    
+    return m = Move(line);
+}
+
+bool Board::reverse()
+{
+    Board board = *this;
+    const char figuresRowLow[BOARD_SIZE] = { 'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r' };
+    const char figuresRowUp[BOARD_SIZE] = { 'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R' };
+    
+    for (unsigned i = 0; i < BOARD_SIZE; i++) {
+        if (tolower(*board(0, i)) != figuresRowLow[i] || tolower(*board(BOARD_SIZE - 1, i)) != figuresRowLow[i])
+            return false;
+        if (tolower(*board(1, i)) != 'p' || tolower(*board(BOARD_SIZE - 2, i)) != 'p')
+            return false;
+    }
+    
+    if (*board(0, 0) == 'r') {
+        for (unsigned i = 0; i < BOARD_SIZE; i++)
+            board(0, i) = figuresRowUp[i];
+        for (unsigned i = 0; i < BOARD_SIZE; i++)
+            board(1, i) = 'P';
+        
+        for (unsigned i = 0; i < BOARD_SIZE; i++)
+            board(BOARD_SIZE - 1, i) = figuresRowLow[i];
+        for (unsigned i = 0; i < BOARD_SIZE; i++)
+            board(BOARD_SIZE - 2, i) = 'p';
+    }
+    else {
+        for (unsigned i = 0; i < BOARD_SIZE; i++)
+            board(0, i) = figuresRowLow[i];
+        for (unsigned i = 0; i < BOARD_SIZE; i++)
+            board(1, i) = 'p';
+        
+        for (unsigned i = 0; i < BOARD_SIZE; i++)
+            board(BOARD_SIZE - 1, i) = figuresRowUp[i];
+        for (unsigned i = 0; i < BOARD_SIZE; i++)
+            board(BOARD_SIZE - 2, i) = 'P';
+    }
+    
+    return true;
+}
+
+void Board::makeMove(const Move& m)
+{
+    Board board = *this;
+    char figure = *board(m.from.row, m.from.col);
+    board(m.from.row, m.from.col) = ' ';
+    board(m.to.row, m.to.col) = figure;
+}
+
+//displays board - takes array board[BOARD_SIZE][BOARD_SIZE]
+// and reads its contents, and displays on the screen
+void Board::display(ostream& os) const
+{
+    clearScreen();
+    Board board = *this;
+    char letter = 0;
+    int i = 0;
+    int j = 0;
+    char k = 0;
+    //row with letters that reprezenting headers of columns
+    cout << "   ";
+    for (letter = 'A'; letter < 'A' + BOARD_SIZE; letter++)
+        cout << "   " << letter;
+    cout << "      \n";
+    
+    //row with a delimited in a chessboard  "    +---+---+---+---+---+---+---+---+   \n";
+    cout << "    ";
+    for (i = 'A'; i<'A' + BOARD_SIZE; i++) {
+        cout << "+---";
+    }
+    cout << "+   \n";
+    
+    // take the array that keeps actual positions of figures and display it on the chessboard
+    
+    for (i = 0; i < BOARD_SIZE; i++) {
+        
+        cout << " " << BOARD_SIZE - i << " ";
+        
+        for (j = 0; j < BOARD_SIZE; j++) {
+            cout << " " << "|" << " " << board(i, j);
+        }
+        cout << " " << "|" << " " << BOARD_SIZE - i << " ";
+        cout << "\n";
+        
+        
+        // delimit each row with figures with a delimiter "    +---+---+---+---+---+---+---+---+   \n";
+        cout << "    ";
+        for (k = 'A'; k<'A' + BOARD_SIZE; k++) {
+            cout << "+---";
+        }
+        cout << "+   \n";
+        
+    }
+    
+    // row with letters that reprezenting headers of columns
+    cout << "   ";
+    for (letter = 'A'; letter < 'A' + BOARD_SIZE; letter++)
+        cout << "   " << letter;
+    cout << "      \n\n";
+    
+}
+
+void Board::init()
+{
+    Board board = *this;
+    const char figuresRow[BOARD_SIZE] = { 'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r' };
+    
+    //memset(this->board, ' ', sizeof(char) * BOARD_SIZE * BOARD_SIZE);
+    for (unsigned i = 0; i < BOARD_SIZE; i++) {
+        board(0, i) = figuresRow[i];
+    }
+    
+    for (unsigned i = 0; i < BOARD_SIZE; i++) {
+        board(1, i) = 'p';
+    }
+    
+    for(unsigned i=0; i<BOARD_SIZE; i++){
+        for(unsigned j=2; j<BOARD_SIZE-2; j++){
+            board(j,i) = ' ';
+        }
+    }
+    
+    
+    for (unsigned i = 0; i < BOARD_SIZE; i++) {
+        board(BOARD_SIZE - 2, i) = 'P';
+    }
+    
+    for (unsigned i = 0; i < BOARD_SIZE; i++) {
+        board(BOARD_SIZE - 1, i) = toupper(figuresRow[i]);
+    }
+}
 
 class Pawn : public Figure {
 public:
@@ -519,8 +691,6 @@ public:
 
 
 
-
-
 class FigureFactory {
 public:
     static Figure* getFigure(char name)
@@ -536,6 +706,37 @@ public:
         return new Figure();
     }
 };
+
+
+// Check if move of figure is valid according to chess rules
+bool Board::valid(const Move& m)
+{
+    Board board = *this;
+    vector<Coord> list;
+    Figure* figure = FigureFactory::getFigure(*board(m.from.row, m.from.col));
+    
+    if (!(isPieceSelected(m))) {
+        return false;
+    }
+    
+    if (!(isSquareAvailable(m)))
+        return false;
+    
+    if (!(figure->valid(m, list)))
+        return false;
+    
+    //początek dopisywania kodu walidującego pola na szachownicy
+    //komcepcja - dodanie metod pawn, rook itd do Board
+    //metody te sprawdzają czy w pionie, poziomie lub na skos pomiedzy startem a koncem nie ma innych pionow
+    //dla skoczka tylko koncowe pole sprawdzamy bo skoczek nie moze bic swoich wlasnych pionow
+    //dla pozostalych figur jak ruch w pionie lub poziomie to sprawdzamy czy nie ma figur po drodze i czy na koncu nie ma wlasnej
+    //dla ruchu po skosie tez - nie trzeba sprawdzac juz czy figura moze sie tak ruszac tylko czy nic nie stoi
+    //wyjatkiem skoczek, tutaj tylko sprawdzamy koncowe pole czy mu tam nie stoi wlasna figura
+    
+    //koniec dopisywania kodu walidującego pola na szachownicy
+    
+    return true;
+}
 
 
 
@@ -694,190 +895,6 @@ void errorMessage(ErrorMessage::ErrorMessageTypes msg)
  }
  */
 
-// Check if move of figure is valid according to chess rules
-bool Board::valid(const Move& m)
-{
-    Board board = *this;
-    vector<Coord> list;
-    Figure* figure = FigureFactory::getFigure(*board(m.from.row, m.from.col));
-    
-    if (!(isPieceSelected(m))) {
-        return false;
-    }
-    
-    if (!(isSquareAvailable(m)))
-        return false;
-    
-    if (!(figure->valid(m, list)))
-        return false;
-    
-    return true;
-}
-
-
-// check if user input is in proper format
-bool Board::valid(string& line)
-{
-    line.erase(std::remove(line.begin(), line.end(), ' '), line.end());
-    transform(line.begin(), line.end(), line.begin(), ::toupper);
-    
-    // send player input to ErrorMessage as interpreted by application
-    ErrorMessage::playerInputLine = line;
-    
-    if (line.size() != 4) {
-        errorMessage(ErrorMessage::badFormat);
-        return false;
-    }
-    return true;
-}
-
-
-
-Move Board::getMove()
-{
-    Move m;
-    string line = "";
-    do {
-        if (Board::getTurn())
-            cout << "White turn:" << endl;
-        else
-            cout << "Black turn:" << endl;
-        
-        getline(cin, line);
-    } while (!valid(line));
-    
-    return m = Move(line);
-}
-
-bool Board::reverse()
-{
-    Board board = *this;
-    const char figuresRowLow[BOARD_SIZE] = { 'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r' };
-    const char figuresRowUp[BOARD_SIZE] = { 'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R' };
-    
-    for (unsigned i = 0; i < BOARD_SIZE; i++) {
-        if (tolower(*board(0, i)) != figuresRowLow[i] || tolower(*board(BOARD_SIZE - 1, i)) != figuresRowLow[i])
-            return false;
-        if (tolower(*board(1, i)) != 'p' || tolower(*board(BOARD_SIZE - 2, i)) != 'p')
-            return false;
-    }
-    
-    if (*board(0, 0) == 'r') {
-        for (unsigned i = 0; i < BOARD_SIZE; i++)
-            board(0, i) = figuresRowUp[i];
-        for (unsigned i = 0; i < BOARD_SIZE; i++)
-            board(1, i) = 'P';
-        
-        for (unsigned i = 0; i < BOARD_SIZE; i++)
-            board(BOARD_SIZE - 1, i) = figuresRowLow[i];
-        for (unsigned i = 0; i < BOARD_SIZE; i++)
-            board(BOARD_SIZE - 2, i) = 'p';
-    }
-    else {
-        for (unsigned i = 0; i < BOARD_SIZE; i++)
-            board(0, i) = figuresRowLow[i];
-        for (unsigned i = 0; i < BOARD_SIZE; i++)
-            board(1, i) = 'p';
-        
-        for (unsigned i = 0; i < BOARD_SIZE; i++)
-            board(BOARD_SIZE - 1, i) = figuresRowUp[i];
-        for (unsigned i = 0; i < BOARD_SIZE; i++)
-            board(BOARD_SIZE - 2, i) = 'P';
-    }
-    
-    return true;
-}
-
-void Board::makeMove(const Move& m)
-{
-    Board board = *this;
-    char figure = *board(m.from.row, m.from.col);
-    board(m.from.row, m.from.col) = ' ';
-    board(m.to.row, m.to.col) = figure;
-}
-
-//displays board - takes array board[BOARD_SIZE][BOARD_SIZE]
-// and reads its contents, and displays on the screen
-void Board::display(ostream& os) const
-{
-    clearScreen();
-    Board board = *this;
-    char letter = 0;
-    int i = 0;
-    int j = 0;
-    char k = 0;
-    //row with letters that reprezenting headers of columns
-    cout << "   ";
-    for (letter = 'A'; letter < 'A' + BOARD_SIZE; letter++)
-        cout << "   " << letter;
-    cout << "      \n";
-    
-    //row with a delimited in a chessboard  "    +---+---+---+---+---+---+---+---+   \n";
-    cout << "    ";
-    for (i = 'A'; i<'A' + BOARD_SIZE; i++) {
-        cout << "+---";
-    }
-    cout << "+   \n";
-    
-    // take the array that keeps actual positions of figures and display it on the chessboard
-    
-    for (i = 0; i < BOARD_SIZE; i++) {
-        
-        cout << " " << BOARD_SIZE - i << " ";
-        
-        for (j = 0; j < BOARD_SIZE; j++) {
-            cout << " " << "|" << " " << board(i, j);
-        }
-        cout << " " << "|" << " " << BOARD_SIZE - i << " ";
-        cout << "\n";
-        
-        
-        // delimit each row with figures with a delimiter "    +---+---+---+---+---+---+---+---+   \n";
-        cout << "    ";
-        for (k = 'A'; k<'A' + BOARD_SIZE; k++) {
-            cout << "+---";
-        }
-        cout << "+   \n";
-        
-    }
-    
-    // row with letters that reprezenting headers of columns
-    cout << "   ";
-    for (letter = 'A'; letter < 'A' + BOARD_SIZE; letter++)
-        cout << "   " << letter;
-    cout << "      \n\n";
-    
-}
-
-void Board::init()
-{
-    Board board = *this;
-    const char figuresRow[BOARD_SIZE] = { 'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r' };
-    
-    //memset(this->board, ' ', sizeof(char) * BOARD_SIZE * BOARD_SIZE);
-    for (unsigned i = 0; i < BOARD_SIZE; i++) {
-        board(0, i) = figuresRow[i];
-    }
-    
-    for (unsigned i = 0; i < BOARD_SIZE; i++) {
-        board(1, i) = 'p';
-    }
-    
-    for(unsigned i=0; i<BOARD_SIZE; i++){
-        for(unsigned j=2; j<BOARD_SIZE-2; j++){
-            board(j,i) = ' ';
-        }
-    }
-    
-    
-    for (unsigned i = 0; i < BOARD_SIZE; i++) {
-        board(BOARD_SIZE - 2, i) = 'P';
-    }
-    
-    for (unsigned i = 0; i < BOARD_SIZE; i++) {
-        board(BOARD_SIZE - 1, i) = toupper(figuresRow[i]);
-    }
-}
 
 bool endOfGame(Board board)
 {
