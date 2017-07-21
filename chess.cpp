@@ -726,7 +726,7 @@ bool Board::valid(const Move& m)
         return false;
     
     //początek dopisywania kodu walidującego pola na szachownicy
-    //komcepcja - dodanie metod pawn, rook itd do Board
+    //komcepcja - dodanie metod
     //metody te sprawdzają czy w pionie, poziomie lub na skos pomiedzy startem a koncem nie ma innych pionow
     //dla skoczka tylko koncowe pole sprawdzamy bo skoczek nie moze bic swoich wlasnych pionow
     //dla pozostalych figur jak ruch w pionie lub poziomie to sprawdzamy czy nie ma figur po drodze i czy na koncu nie ma wlasnej
