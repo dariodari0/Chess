@@ -20,7 +20,6 @@
 
 /*
 TODO:
-1. Dokończyć validacje figur, głównie została królowa która powinna dziedziczyć po wieży lub 
 2. Dokończyć funkcje validującą Board, tak aby uwzględniała walidacje figur oraz walidacje pól pomiędzy ruchem
 3. Zrobić walidacje pól pomiędzy ruchem, należy wykorzystać listę vector<Coord> list która jest uzupełniona polami do sprawdzenia.
 	Dla większości figur jeśli pole nie jest puste to oznacza błąd, za wyjątkiem pionka: jeśli pionek wykona ruch na ukos to musi być tam pionek przeciwnika, jeśli 2 do przodu to sprawdza tak jak reszte figur.
@@ -74,6 +73,7 @@ const int BOARD_SIZE = 8;
 //GLOBAL VARIABLES ---------------------------------------------------------------------------------
 
 class Board;
+class FigureFactory;
 class Figure;
 class King;
 class Queen;
@@ -112,9 +112,26 @@ struct Move {
 		to.col = line[2] - 'A';
 		to.row = BOARD_SIZE - (line[3] - '1') - 1;
 	}
+
+	bool valid();
 };
 
 
+class FigureFactory {
+public:
+	static Figure* getFigure(char name) 
+	{
+		switch (name) {
+		case 'K': return new King();
+		case 'Q': return new Queen();
+		case 'B': return new Bishop();
+		case 'N': return new Knight();
+		case 'R': return new Rook();
+		case 'P': return new Pawn();
+		}
+		return new Figure();
+	}
+};
 
 class Figure {
 	char name;
@@ -136,7 +153,7 @@ public:
 	friend ostream& operator<<(ostream& os, const Figure& figure);
 };
 
-class King : Figure {
+class King : public Figure {
 public:
 	bool valid(const Move &m, vector<Coord>& list) {
 
@@ -176,13 +193,50 @@ public:
 	}
 };
 
-class Queen : Figure{
+class Queen : public Bishop{
+public:
+	bool valid(const Move &m, vector<Coord>& list) 
+	{
+		if (Bishop::valid(m, list))
+			return true;
 
+		int col_diff = abs(m.to.col - m.from.col);
+		int row_diff = abs(m.to.row - m.from.row);
+
+		if (m.from.col != m.to.col && m.from.row != m.to.row) {
+			return false;
+		}
+
+		if (m.from.col > m.to.col) {
+			for (int i = 1; i < col_diff; ++i) {
+				list.push_back(Coord(m.from.row, m.from.col - i));
+			}
+		}
+		if (m.from.col < m.to.col) {
+			for (int i = 1; i < col_diff; ++i) {
+				list.push_back(Coord(m.from.row, m.from.col + i));
+			}
+		}
+		if (m.from.row > m.to.row) {
+			for (int i = 1; i < row_diff; ++i) {
+				list.push_back(Coord(m.from.row - i, m.from.col));
+			}
+		}
+		if (m.from.row < m.to.row) {
+			for (int i = 1; i < row_diff; ++i) {
+				list.push_back(Coord(m.from.row + i, m.from.col));
+			}
+		}
+
+		return true;
+		
+	}
 };
 
-class Bishop : Figure {
+class Bishop : public Figure {
 public:
-	bool valid(const Move &m, vector<Coord>& list) {
+	bool valid(const Move &m, vector<Coord>& list) 
+	{
 		int col_diff = (m.to.col - m.from.col);
 		int row_diff = (m.to.row - m.from.row);
 
@@ -219,7 +273,7 @@ public:
 	}
 };
 
-class Knight : Figure {
+class Knight : public Figure {
 public:
 	bool valid(const Move &m, vector<Coord>& list) {
 
@@ -232,7 +286,7 @@ public:
 	}
 };
 
-class Rook : Figure {
+class Rook : public Figure {
 public:
 	bool valid(const Move &m, vector<Coord>& list) {
 
@@ -268,7 +322,7 @@ public:
 	}
 };
 
-class Pawn : Figure {
+class Pawn : public Figure {
 public:
 	bool valid(const Move &m, vector<Coord>& list) {
 
@@ -313,7 +367,6 @@ ostream& operator<<(ostream& os, const Figure& figure) {
 class Board {
 
 private:
-	//char board[BOARD_SIZE][BOARD_SIZE] = { ' ' };
 	Figure* board;
 	static bool whites;
 
@@ -323,11 +376,13 @@ private:
 	void makeMove(const Move& m);
 	bool isPieceSelected(const Move &m);
 	bool isSquareAvailable(const Move &m);
+	bool valid(string& line);
 
 public:
 	Board(int boardSize) { board = new Figure[boardSize * boardSize]; whites = true; }
 
 	void changeTurn() { whites = !whites; }
+	Move Board::getMove();
 
 	// true = whites, false = blacks
 	static bool getTurn() { return whites; }
@@ -473,31 +528,6 @@ void errorMessage(ErrorMessage::ErrorMessageTypes msg)
 	gotoXY(0, 20);
 }
 
-
-/*
-// translate chess letter value to board coord
-int translateLetter(char letter) {
-	int result = letter - 'A';
-	if (result >= 0 && result < BOARD_SIZE) {
-		return result;
-	}
-	return -1;
-
-}
-
-
-// translate chess number value to board coord
-int translateInt(int number) {
-
-	if (number < 1 && number > BOARD_SIZE) {
-		return -1;
-	}
-	//change numbering of rows - in MOVE struct there was numbering from 1 to BOARD_SIZE
-	//we change it initially to numbering from 0 to BOARD_SIZE - 1
-	//reverse numbers of rows to correctly address the array board
-	return BOARD_SIZE - number;
-}
-*/
 int inverseTranslateInt(int x) {
 	return BOARD_SIZE - x;
 }
@@ -505,7 +535,6 @@ int inverseTranslateInt(int x) {
 char inverseTranslateCh(int x) {
 	return x + 'A';
 }
-
 
 //figure functions declarations
 bool king(const Move &m, Board board, bool whites);
@@ -638,7 +667,9 @@ bool Board::isSquareAvailable(const Move &m)
 bool Board::valid(const Move& m)
 {
 	Board board = *this;
-	Figure figure = board(m.from.row, m.from.col);
+	vector<Coord> list;
+	Figure* figure = FigureFactory::getFigure(*board(m.from.row, m.from.col));
+	
 	if (!(isPieceSelected(m))) {
 		return false;
 	}
@@ -646,27 +677,28 @@ bool Board::valid(const Move& m)
 	if (!(isSquareAvailable(m)))
 		return false;
 
-
+	if (!(figure->valid(m, list)))
+		return false;
 
 	return true;
 }
 
 
-bool valid(Move m) {
+bool Move::valid() {
 
-	if (m.from.col < 0 || m.from.col >= BOARD_SIZE) {
+	if (from.col < 0 || from.col >= BOARD_SIZE) {
 		errorMessage(ErrorMessage::coordBeyondBoard);
 		return false;
 	}
-	else if (m.to.col < 0 || m.to.col >= BOARD_SIZE) {
+	else if (to.col < 0 || to.col >= BOARD_SIZE) {
 		errorMessage(ErrorMessage::coordBeyondBoard);
 		return false;
 	}
-	else if (m.from.row < 0 || m.from.row > BOARD_SIZE) {
+	else if (from.row < 0 || from.row > BOARD_SIZE) {
 		errorMessage(ErrorMessage::coordBeyondBoard);
 		return false;
 	}
-	else if (m.to.row < 0 || m.to.row > BOARD_SIZE) {
+	else if (to.row < 0 || to.row > BOARD_SIZE) {
 		errorMessage(ErrorMessage::coordBeyondBoard);
 		return false;
 	}
@@ -674,7 +706,7 @@ bool valid(Move m) {
 }
 
 // check if user input is in proper format
-bool valid(string& line)
+bool Board::valid(string& line)
 {
 	line.erase(std::remove(line.begin(), line.end(), ' '), line.end());
 	transform(line.begin(), line.end(), line.begin(), ::toupper);
@@ -690,7 +722,7 @@ bool valid(string& line)
 }
 
 
-Move getMove()
+Move Board::getMove()
 {
 	Move m;
 	string line = "";
@@ -840,8 +872,8 @@ int main()
 	while (true) {
 		do {
 			do {
-				m = getMove();
-			} while (!valid(m));
+				m = b.getMove();
+			} while (!m.valid());
 		} while (!b.valid(m));
 		
 		b += m;
