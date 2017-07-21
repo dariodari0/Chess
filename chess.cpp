@@ -1,4 +1,4 @@
-﻿//     A   B   C   D   E   F   G   H
+//     A   B   C   D   E   F   G   H
 //   +---+---+---+---+---+---+---+---+
 // 8 | r | n | b | q | k | b | n | r | 8
 //   +---+---+---+---+---+---+---+---+
@@ -386,6 +386,8 @@ public:
     Figure operator()(int x, int y) const;
 };
 
+
+bool Board::whites=true;
 
 // Check if proper pawn is selected or space is empty
 bool Board::isPieceSelected(const Move &m)
