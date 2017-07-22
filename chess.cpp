@@ -737,7 +737,6 @@ bool Board::valid(const Move& m, bool errorMessagesOn) {
         return false;
     }
     
-    
     vector<Coord>::iterator it;
     
     //is our piece a pawn?
@@ -755,6 +754,7 @@ bool Board::valid(const Move& m, bool errorMessagesOn) {
                 if (errorMessagesOn) { errorMessage(ErrorMessage::badPieceMovement); }
                 return false;
             }
+            return true;
         }
     }
     
