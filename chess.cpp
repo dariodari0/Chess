@@ -20,8 +20,8 @@
 
 /*
  TODO:
- 2. Dokończyć funkcje validującą Board, tak aby uwzględniała walidacje figur oraz walidacje pól pomiędzy ruchem
- 3. Zrobić walidacje pól pomiędzy ruchem, należy wykorzystać listę vector<Coord> list która jest uzupełniona polami do sprawdzenia.
+ 2. xDokończyć funkcje validującą Board, tak aby uwzględniała walidacje figur oraz walidacje pól pomiędzy ruchem
+ 3. xZrobić walidacje pól pomiędzy ruchem, należy wykorzystać listę vector<Coord> list która jest uzupełniona polami do sprawdzenia.
 	Dla większości figur jeśli pole nie jest puste to oznacza błąd, za wyjątkiem pionka: jeśli pionek wykona ruch na ukos to musi być tam pionek przeciwnika, jeśli 2 do przodu to sprawdza tak jak reszte figur.
  4. Dostosowac funkcję sprawdzającą szachowanie
  5. Dostosować zwracanie błędów dla gracza (w tej chwili zostały usunięte z funkcji walidująych figury)
@@ -391,7 +391,7 @@ public:
 bool Board::whites=true;
 
 
-// Check if proper pawn is selected or space is empty
+// Check if proper piece is selected or space is empty
 bool Board::isPieceSelected(const Move &m, bool errorMessagesOn)
 {
     Board board = *this;
@@ -421,7 +421,7 @@ bool Board::isPieceSelected(const Move &m, bool errorMessagesOn)
 
 
 
-// Check if pawn can enter selected square
+// Check if piece can enter selected square
 bool Board::isSquareAvailable(const Move &m, bool errorMessagesOn)
 {
     Board board = *this;
@@ -726,7 +726,47 @@ bool Board::valid(const Move& m, bool errorMessagesOn=true) {
     
     //check whether all the fields that figure passes are empty
     for (vector<Coord>::iterator it = list.begin() ; it != list.end(); ++it) {
-        if(*board(it.base()->row, it.base()->col)!=' '){
+        //if this is the end field where the piece goes then it can be occupied but only by
+        //the other player's piece
+        //and one has to check separately a pawn because if the pawn moves forwards
+        //then its end field has to be empty
+        //if it moves sideways the end field has to be occupied by other player's figure
+        
+        if(it==list.end()) {
+            
+            //is our piece a pawn?
+            if (*board(m.from.row, m.from.col) == 'p' || *board(m.from.row, m.from.col) == 'P') {
+                
+                //is the pawn moving straight fowards? then its end field has to be empty
+                int poziom = m.to.col - m.from.col; //checks whether the pawn moves horizontally
+                
+                if (poziom == 0) { //pawn moves straight forward
+                    if (*board(m.to.row, m.to.col) != ' ') {
+                        if (errorMessagesOn) { errorMessage(ErrorMessage::squareIsOccupied); }
+                        return false;
+                        
+                    }
+                } else {  //pawn moves sideways - then its final field has to be occupied by other player's piece
+                    if (*board(m.to.row, m.to.col) == ' ' ||
+                        islower(*board(m.to.row, m.to.col)) == islower(*board(m.from.row, m.from.col))) {
+                        if (errorMessagesOn) { errorMessage(ErrorMessage::badPieceMovement); }
+                        return false;
+                    }
+                }
+            } else {
+                //for all other figures the end field has to be either empty or occupied by other player's piece
+                if(*board(m.to.row, m.to.col)!=' ' && islower(*board(m.to.row, m.to.col)) == islower(*board(m.from.row, m.from.col))){
+                    if(errorMessagesOn){errorMessage(ErrorMessage::squareIsOccupied);}
+                    return false;
+                }
+            }
+        }
+        
+        //we covered the end field of the move, now we check all intermediary fields - they have to be empty
+        //in the case of a knight we did not add any fields to the list, so for a knight we do not check this condition
+        //because knight can jump over figures
+        else if(*board(it.base()->row, it.base()->col)!=' '){
+            if(errorMessagesOn){errorMessage(ErrorMessage::movementOverFigure);}
             return false;
         }
     }
