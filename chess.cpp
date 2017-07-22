@@ -725,22 +725,26 @@ bool Board::valid(const Move& m, bool errorMessagesOn=true) {
     int pion = m.to.row - m.from.row;
     int poziom = m.to.col - m.from.col;
     //czy na koncowym polu ruchu nie stoi bierka swojego koloru
-    if(islower(*board(m.to.row, m.to.col)) == islower(*board(m.from.row, m.from.col))){
+    if(*board(m.to.row,m.to.col)!=' ' && islower(*board(m.to.row, m.to.col)) == islower(*board(m.from.row, m.from.col))){
         if(errorMessagesOn){errorMessage(ErrorMessage::squareIsOccupied);}
         return false;
     }
     
-    int stepV = (m.from.col - m.to.col)/abs(m.from.col - m.to.col);
-    int stepH = (m.from.row - m.to.row)/abs(m.from.row - m.to.row);
+    
+    int stepV = 0;
+    if(m.from.col-m.to.col){stepV = (m.from.col - m.to.col)/abs(m.from.col - m.to.col);}
+    int stepH = 0;
+    if(m.from.row-m.to.row){stepH = (m.from.row - m.to.row)/abs(m.from.row - m.to.row);}
     
     
     //jezeli na koncowym polu ruchu nie stoi bierka swojego koloru to testujemy pola na sciezce ruchu figury
     //jezeli tylko ruch w pionie
     if(poziom==0){
+        
         //czy nic nie stoi na drodze bierki
-        int i = m.from.row;
-        while(i!=m.to.row){
-            if(*board(i,m.from.col)!=' '){
+        int i = m.from.col+1;
+        while(i!=m.to.col){
+            if(*board(m.from.row,i)!=' '){
                 if(errorMessagesOn){errorMessage(ErrorMessage::movementOverFigure);}
                 return false;
             }
@@ -749,9 +753,9 @@ bool Board::valid(const Move& m, bool errorMessagesOn=true) {
     }
     //jezeli ruch tylko w poziomie
     else if(pion==0){
-        int i = m.from.col;
-        while(i!=m.to.col){
-            if(*board(m.from.row, i)){
+        int i = m.from.row+1;
+        while(i!=m.to.row){
+            if(*board(i, m.from.col)){
                 if(errorMessagesOn){errorMessage(ErrorMessage::movementOverFigure);}
                 return false;
             }
@@ -766,8 +770,8 @@ bool Board::valid(const Move& m, bool errorMessagesOn=true) {
         } else{
             //jak nie skoczek to musimy sprawdzac
             //ruch jest tylko po przekatnej
-            int i = m.from.row;
-            int j = m.from.col;
+            int i = m.from.row+1;
+            int j = m.from.col+1;
             while(i!=m.to.row && j!=m.to.col){
                 if(*board(i,j)==' '){
                     if(errorMessagesOn){errorMessage(ErrorMessage::movementOverFigure);}
