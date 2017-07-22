@@ -658,7 +658,6 @@ public:
     bool valid(const Move &m, vector<Coord>& list, bool errorMessagesOn = true) {
         
         int pawnColor = 1;
-        cout << "Pawn color ->" << Board::getTurn() << endl;
         if (Board::getTurn()) {pawnColor = -1;}
         
         // pawn moves 1 square forwards
@@ -740,7 +739,8 @@ bool Board::valid(const Move& m, bool errorMessagesOn) {
     vector<Coord>::iterator it;
     
     //is our piece a pawn?
-    //if so, does it move across
+    //if so, does it move across - all other end field situations are checked by other validation functions
+    //only in this case the end field is added to the list and has to be checked
     
     if (*board(m.from.row, m.from.col) == 'p' || *board(m.from.row, m.from.col) == 'P') {
         
@@ -749,8 +749,7 @@ bool Board::valid(const Move& m, bool errorMessagesOn) {
         if (poziom != 0) {
             //pawn moves sideways - then its final field has to be occupied by other player's piece
             
-            if (*board(m.to.row, m.to.col) == ' ' ||
-                islower(*board(m.to.row, m.to.col)) == islower(*board(m.from.row, m.from.col))) {
+            if (*board(m.to.row, m.to.col) == ' ') {
                 if (errorMessagesOn) { errorMessage(ErrorMessage::badPieceMovement); }
                 return false;
             }
@@ -758,23 +757,15 @@ bool Board::valid(const Move& m, bool errorMessagesOn) {
         }
     }
     
-    
-    //check whether all the fields that figure passes are empty
+    //if we are not dealing with a pawn that moves across, we do not have final fields in the list
+    //and we only check whteher intermediary fields are empty
+    //if it is a knight, no fields are added to the list and then we do not check them
     for (it = list.begin() ; it != list.end(); ++it) {
-        
-        //if any of the fields on the figure move are not empty, then such a move is illegal
-        //with the exception for a knight
-        //but for a knight the list is empty so we do not check for it
         if(*board(it.base()->row, it.base()->col)!=' '){
             if(errorMessagesOn){errorMessage(ErrorMessage::movementOverFigure);}
             return false;
         }
     }
-    
-    
-    
-    
-    
     
     return true;
 }
@@ -873,64 +864,105 @@ void errorMessage(ErrorMessage::ErrorMessageTypes msg)
 
 
 /*
+ 
  //this function checks if the king is deadlocked(to be used in king's move validation[king])
+ 
  bool is_Deadlocked(const Move &m, Board board, bool whites) {
  
  int toInt = m.to.row;
- char toCh = m.to.col;
- 
- 
- Move m_King;
- Move m_Queen;
- Move m_Bishop;
- Move m_Knight;
- Move m_Rook;
- Move m_Pawn;
+ int toCh = m.to.col;
  
  char figure;
+ 
  
  //setting up the Move structures for each enemy figure
  for (int i = 0; i<BOARD_SIZE; i++) {
  for (int j = 0; j<BOARD_SIZE; j++) {
- figure = board[i*BOARD_SIZE+j];
+ Figure* figure = FigureFactory::getFigure(*board(j, i));
+ 
  
  if (whites) {
  
- if (figure == 'k') m_King.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
- if (figure == 'q') m_Queen.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
- if (figure == 'b') m_Bishop.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
- if (figure == 'n') m_Knight.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
- if (figure == 'r') m_Rook.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
- if (figure == 'p') m_Pawn.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
+ if (figure == 'k') {
+ 
+ m_King.Fill(i, j, toCh, toInt);
+ if (king(m_King, board)) {
+ return true;
+ }
+ }
+ if (figure == 'q') {
+ m_Queen.Fill(i, j, toCh, toInt);
+ if (queen(m_Queen, board)){
+ return true;
+ }
+ }
+ if (figure == 'b') {
+ m_Bishop.Fill(i, j, toCh, toInt);
+ if (bishop(m_Bishop, board)){
+ return true;
+ }
+ }
+ if (figure == 'n') {
+ m_Knight.Fill(i, j, toCh, toInt);
+ if (knight(m_Knight, board)){
+ return true;
+ }
+ }
+ if (figure == 'r') {
+ m_Rook.Fill(i, j, toCh, toInt);
+ if (rook(m_Rook, board)){
+ return true;
+ }
+ }
+ if (figure == 'p') {
+ m_Pawn.Fill(i, j, toCh, toInt);
+ if (pawn(m_Pawn, board, whites)){
+ return true;
+ }
+ }
  }
  
  if (!whites) {
  
- if (figure == 'K') m_King.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
- if (figure == 'Q') m_Queen.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
- if (figure == 'B') m_Bishop.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
- if (figure == 'N') m_Knight.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
- if (figure == 'R') m_Rook.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
- if (figure == 'P') m_Pawn.Fill(inverseTranslateCh(j), inverseTranslateInt(i), toCh, toInt);
- }
- 
+ if (figure == 'K') {
+ m_King.Fill(i, j, toCh, toInt);
+ if (king(m_King, board)) {
+ return true;
  }
  }
- 
- //returns true if any figure can move into kings destiny position->this means king is deadlocked
- 
- if (king(m_King, board))
+ if (figure == 'Q') {
+ m_Queen.Fill(i, j, toCh, toInt);
+ if (queen(m_Queen, board)){
  return true;
- else if (queen(m_Queen, board))
+ }
+ }
+ if (figure == 'B') {
+ m_Bishop.Fill(i, j, toCh, toInt);
+ if (bishop(m_Bishop, board)){
  return true;
- else if (bishop(m_Bishop, board))
+ }
+ }
+ if (figure == 'N') {
+ m_Knight.Fill(i, j, toCh, toInt);
+ if (knight(m_Knight, board)){
  return true;
- else if (knight(m_Knight, board))
+ }
+ }
+ if (figure == 'R') {
+ m_Rook.Fill(i, j, toCh, toInt);
+ if (rook(m_Rook, board)){
  return true;
- else if (rook(m_Rook, board))
+ }
+ }
+ if (figure == 'P') {
+ m_Pawn.Fill(i, j, toCh, toInt);
+ if (pawn(m_Pawn, board, whites)){
  return true;
- else if (pawn(m_Pawn, board, whites))
- return true;
+ }
+ }
+ }
+ }
+ }
  
  return false;
  }
