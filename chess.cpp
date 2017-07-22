@@ -369,22 +369,23 @@ private:
     void makeMove(const Move& m);
     bool isPieceSelected(const Move &m, bool errorMessagesOn = true);
     bool isSquareAvailable(const Move &m, bool errorMessagesOn = true);
-    bool valid(string& line);
     static bool whites;
 public:
     
-    Board(int boardSize) { board = new Figure[boardSize * boardSize]; whites = true; }
+    Board(int boardSize) { board = new Figure[boardSize * boardSize]; }
     void changeTurn() { whites = !whites; }
     Move getMove();
     // true = whites, false = blacks
     static bool getTurn() { return whites; }
-    bool valid(const Move& m, bool errorMessagesOn);
+    bool valid(const Move& m, bool errorMessagesOn=true);
     Board& operator=(const BoardOps boardOps);
     friend ostream& operator<<(ostream& os, const Board& board);
     Board& operator!();
     Board& operator+=(const Move&);
     Figure& operator()(int x, int y);
     Figure operator()(int x, int y) const;
+    bool valid(string& line);
+    
 };
 
 
@@ -652,6 +653,7 @@ public:
     bool valid(const Move &m, vector<Coord>& list) {
         
         int pawnColor = 1;
+        cout << "Pawn color ->" << Board::getTurn() << endl;
         if (Board::getTurn()) pawnColor = -1;
         
         // pawn moves 1 square forwards
@@ -691,11 +693,17 @@ public:
     static Figure* getFigure(char name)
     {
         switch (name) {
+            case 'k':
             case 'K': return new King();
+            case 'q':
             case 'Q': return new Queen();
+            case 'b':
             case 'B': return new Bishop();
+            case 'n':
             case 'N': return new Knight();
+            case 'r':
             case 'R': return new Rook();
+            case 'p':
             case 'P': return new Pawn();
         }
         return new Figure();
@@ -704,7 +712,7 @@ public:
 
 
 // Check if move of figure is valid according to chess rules
-bool Board::valid(const Move& m, bool errorMessagesOn=true) {
+bool Board::valid(const Move& m, bool errorMessagesOn) {
     
     Board board = *this;
     vector<Coord> list;
