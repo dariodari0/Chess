@@ -161,7 +161,7 @@ class Figure {
     char name;
 public:
     
-    virtual bool valid(const Move &m, vector<Coord>& list) {
+    virtual bool valid(const Move &m, vector<Coord>& list, bool errorMessagesOn = true) {
         cout << "Something went wrong..." << endl;
         return false;
     };
@@ -187,7 +187,7 @@ ostream& operator<<(ostream& os, const Figure& figure) {
 
 class King : public Figure {
 public:
-    bool valid(const Move &m, vector<Coord>& list) {
+    bool valid(const Move &m, vector<Coord>& list, bool errorMessagesOn = true) {
         
         if (m.to.col == m.from.col + 1 && m.to.row == m.from.row) {
             return true;
@@ -220,6 +220,7 @@ public:
             return true;
         }
         
+        if(errorMessagesOn){errorMessage(ErrorMessage::badPieceMovement);}
         return false;
     }
 };
@@ -227,13 +228,14 @@ public:
 
 class Bishop : public Figure {
 public:
-    bool valid(const Move &m, vector<Coord>& list)
+    bool valid(const Move &m, vector<Coord>& list, bool errorMessagesOn = true)
     {
         int col_diff = (m.to.col - m.from.col);
         int row_diff = (m.to.row - m.from.row);
         
         //basically in case of bishop the absolute value of vertical and horizontal shifts must be equal(diagonal move)
         if (abs(col_diff) != abs(row_diff)) {
+            if(errorMessagesOn){errorMessage(ErrorMessage::badPieceMovement);}
             return false;
         }
         
@@ -267,7 +269,7 @@ public:
 
 class Queen : public Bishop{
 public:
-    bool valid(const Move &m, vector<Coord>& list)
+    bool valid(const Move &m, vector<Coord>& list, bool errorMessagesOn=true)
     {
         if (Bishop::valid(m, list))
             return true;
@@ -276,6 +278,7 @@ public:
         int row_diff = abs(m.to.row - m.from.row);
         
         if (m.from.col != m.to.col && m.from.row != m.to.row) {
+            if(errorMessagesOn){errorMessage(ErrorMessage::badPieceMovement);}
             return false;
         }
         
@@ -308,25 +311,27 @@ public:
 
 class Knight : public Figure {
 public:
-    bool valid(const Move &m, vector<Coord>& list) {
+    bool valid(const Move &m, vector<Coord>& list, bool errorMessagesOn = true) {
         
         if (abs(m.from.col - m.to.col) == 1 && abs(m.from.row - m.to.row) == 2)
             return true;
         
         if (abs(m.from.col - m.to.col) == 2 && abs(m.from.row - m.to.row) == 1)
             return true;
+        if(errorMessagesOn){errorMessage(ErrorMessage::badPieceMovement);}
         return false;
     }
 };
 
 class Rook : public Figure {
 public:
-    bool valid(const Move &m, vector<Coord>& list) {
+    bool valid(const Move &m, vector<Coord>& list, bool errorMessagesOn = true) {
         
         int col_diff = abs(m.to.col - m.from.col);
         int row_diff = abs(m.to.row - m.from.row);
         
         if (m.from.col != m.to.col && m.from.row != m.to.row) {
+            if(errorMessagesOn){errorMessage(ErrorMessage::badPieceMovement);}
             return false;
         }
         
@@ -650,18 +655,18 @@ void Board::init()
 
 class Pawn : public Figure {
 public:
-    bool valid(const Move &m, vector<Coord>& list) {
+    bool valid(const Move &m, vector<Coord>& list, bool errorMessagesOn = true) {
         
         int pawnColor = 1;
         cout << "Pawn color ->" << Board::getTurn() << endl;
-        if (Board::getTurn()) pawnColor = -1;
+        if (Board::getTurn()) {pawnColor = -1;}
         
         // pawn moves 1 square forwards
         if (m.to.row == m.from.row + pawnColor && m.to.col == m.from.col) {
             list.push_back( Coord(m.from.row + pawnColor, m.from.col) );
             return true;
         }
-        // pawn moves crosswise and makes a kill
+        // pawn moves across and makes a kill
         else if (m.to.row == m.from.row + pawnColor && m.to.col == m.from.col + 1) {
             list.push_back( Coord(m.from.row + pawnColor, m.from.col + 1) );
             return true;
@@ -681,7 +686,7 @@ public:
                 return true;
             }
         }
-        
+        if(errorMessagesOn){errorMessage(ErrorMessage::badPieceMovement);}
         return false;
     }
 };
@@ -713,7 +718,6 @@ public:
 
 // Check if move of figure is valid according to chess rules
 bool Board::valid(const Move& m, bool errorMessagesOn) {
-    
     Board board = *this;
     vector<Coord> list;
     Figure* figure = FigureFactory::getFigure(*board(m.from.row, m.from.col));
@@ -729,55 +733,68 @@ bool Board::valid(const Move& m, bool errorMessagesOn) {
     
     //check whether the move itself is correct for the chosen figure - we do not check whether
     //all the fields that a figure passes are empty here
-    if (!figure->valid(m, list)) //TODO ?dolozyc wylaczanie errorMessages?
+    if (!figure->valid(m, list)) {
         return false;
+    }
+    
+    
+    vector<Coord>::iterator it;
+    
     
     //check whether all the fields that figure passes are empty
-    for (vector<Coord>::iterator it = list.begin() ; it != list.end(); ++it) {
-        //if this is the end field where the piece goes then it can be occupied but only by
-        //the other player's piece
-        //and one has to check separately a pawn because if the pawn moves forwards
-        //then its end field has to be empty
-        //if it moves sideways the end field has to be occupied by other player's figure
+    for (it = list.begin() ; it != list.end(); ++it) {
         
-        if(it==list.end()) {
-            
-            //is our piece a pawn?
-            if (*board(m.from.row, m.from.col) == 'p' || *board(m.from.row, m.from.col) == 'P') {
-                
-                //is the pawn moving straight fowards? then its end field has to be empty
-                int poziom = m.to.col - m.from.col; //checks whether the pawn moves horizontally
-                
-                if (poziom == 0) { //pawn moves straight forward
-                    if (*board(m.to.row, m.to.col) != ' ') {
-                        if (errorMessagesOn) { errorMessage(ErrorMessage::squareIsOccupied); }
-                        return false;
-                        
-                    }
-                } else {  //pawn moves sideways - then its final field has to be occupied by other player's piece
-                    if (*board(m.to.row, m.to.col) == ' ' ||
-                        islower(*board(m.to.row, m.to.col)) == islower(*board(m.from.row, m.from.col))) {
-                        if (errorMessagesOn) { errorMessage(ErrorMessage::badPieceMovement); }
-                        return false;
-                    }
-                }
-            } else {
-                //for all other figures the end field has to be either empty or occupied by other player's piece
-                if(*board(m.to.row, m.to.col)!=' ' && islower(*board(m.to.row, m.to.col)) == islower(*board(m.from.row, m.from.col))){
-                    if(errorMessagesOn){errorMessage(ErrorMessage::squareIsOccupied);}
-                    return false;
-                }
-            }
-        }
-        
-        //we covered the end field of the move, now we check all intermediary fields - they have to be empty
-        //in the case of a knight we did not add any fields to the list, so for a knight we do not check this condition
-        //because knight can jump over figures
-        else if(*board(it.base()->row, it.base()->col)!=' '){
+        if(list.size()==1){break;}
+        //if any of the fields on the figure move are not empty, then such a move is illegal
+        //with the exception for a knight
+        //but for a knight the list is empty so we do not check for it
+        if(*board(it.base()->row, it.base()->col)!=' '){
             if(errorMessagesOn){errorMessage(ErrorMessage::movementOverFigure);}
             return false;
         }
     }
+    cout << "got here" << endl;
+    //if this is the end field where the piece goes then it can be occupied but only by
+    //the other player's piece
+    //and one has to check separately a pawn because if the pawn moves forwards
+    //then its end field has to be empty
+    //if it moves sideways the end field has to be occupied by other player's figure
+    
+    
+    //is our piece a pawn?
+    if (*board(m.from.row, m.from.col) == 'p' || *board(m.from.row, m.from.col) == 'P') {
+        cout << "We are dealing with a pawn" << endl;
+        //is the pawn moving straight fowards? then its end field has to be empty
+        cout << "Do we move between columns?" << m.to.col - m.from.col << endl;
+        
+        int poziom = m.to.col - m.from.col; //checks whether the pawn moves horizontally
+        
+        if (poziom == 0) { //pawn moves straight forward
+            cout << "We are dealing with forward move of a pawn" << endl;
+            if (*board(m.to.row, m.to.col) != ' ') {
+                if (errorMessagesOn) { errorMessage(ErrorMessage::squareIsOccupied); }
+                return false;
+            }
+        } else {  //pawn moves sideways - then its final field has to be occupied by other player's piece
+            cout << "We are dealing with across movement of a pawn" << endl;
+            cout << "Is end square empty ->?" << (*board(m.to.row, m.to.col) == ' ') << endl;
+            cout << "If not empty, is end square with other player piece?" << (islower(*board(m.to.row, m.to.col)) == islower(*board(m.from.row, m.from.col))  )<< endl;
+            
+            if (*board(m.to.row, m.to.col) == ' ' ||
+                islower(*board(m.to.row, m.to.col)) == islower(*board(m.from.row, m.from.col))) {
+                if (errorMessagesOn) { errorMessage(ErrorMessage::badPieceMovement); }
+                return false;
+            }
+        }
+    } else {
+        cout << "We are not dealing with a pawn" << endl;
+        //for all other figures the end field has to be either empty or occupied by other player's piece
+        if(*board(m.to.row, m.to.col)!=' ' && islower(*board(m.to.row, m.to.col)) == islower(*board(m.from.row, m.from.col))){
+            if(errorMessagesOn){errorMessage(ErrorMessage::squareIsOccupied);}
+            return false;
+        }
+    }
+    
     
     return true;
 }
@@ -843,11 +860,11 @@ void errorMessage(ErrorMessage::ErrorMessageTypes msg)
             break;
         case ErrorMessage::emptySpaceSelected:
             clearLine(20);
-            cout << "No pawn on this square!" << endl;
+            cout << "No piece on this square!" << endl;
             break;
         case ErrorMessage::wrongColorSelected:
             clearLine(20);
-            cout << "This is not your pawn!" << endl;
+            cout << "This is not your piece!" << endl;
             break;
         case ErrorMessage::badPieceMovement:
             clearLine(20);
@@ -859,7 +876,7 @@ void errorMessage(ErrorMessage::ErrorMessageTypes msg)
             break;
         case ErrorMessage::squareIsOccupied:
             clearLine(20);
-            cout << "Your pawn already occupies this field!" << endl;
+            cout << "One of yours pieces already occupies this field!" << endl;
             break;
         default:
             clearLine(20);
