@@ -368,8 +368,8 @@ private:
     bool reverse();
     void init();
     void makeMove(const Move& m);
-    bool isPieceSelected(const Move &m);
-    bool isSquareAvailable(const Move &m);
+    bool isPieceSelected(const Move &m, bool errorMessagesOn = true);
+    bool isSquareAvailable(const Move &m, bool errorMessagesOn = true);
     bool valid(string& line);
     static bool whites;
 public:
@@ -379,7 +379,7 @@ public:
     Move getMove();
     // true = whites, false = blacks
     static bool getTurn() { return whites; }
-    bool valid(const Move& m);
+    bool valid(const Move& m, bool errorMessagesOn);
     Board& operator=(const BoardOps boardOps);
     friend ostream& operator<<(ostream& os, const Board& board);
     Board& operator!();
@@ -393,27 +393,27 @@ bool Board::whites=true;
 
 
 // Check if proper pawn is selected or space is empty
-bool Board::isPieceSelected(const Move &m)
+bool Board::isPieceSelected(const Move &m, bool errorMessagesOn)
 {
     Board board = *this;
     char piece = *board(m.from.row, m.from.col);
     
     if (piece >= 'a' && piece <= 'z') {
         if (Board::getTurn() == true) {
-            errorMessage(ErrorMessage::wrongColorSelected);
+            if(errorMessagesOn){errorMessage(ErrorMessage::wrongColorSelected);}
             return false;
         }
     }
     
     if (piece >= 'A' && piece <= 'Z') {
         if (Board::getTurn() == false) {
-            errorMessage(ErrorMessage::wrongColorSelected);
+            if(errorMessagesOn){errorMessage(ErrorMessage::wrongColorSelected);}
             return false;
         }
     }
     
     if (piece == ' ') {
-        errorMessage(ErrorMessage::emptySpaceSelected);
+        if(errorMessagesOn){errorMessage(ErrorMessage::emptySpaceSelected);}
         return false;
     }
     
@@ -423,22 +423,20 @@ bool Board::isPieceSelected(const Move &m)
 
 
 // Check if pawn can enter selected square
-bool Board::isSquareAvailable(const Move &m)
+bool Board::isSquareAvailable(const Move &m, bool errorMessagesOn)
 {
     Board board = *this;
     char piece = *board(m.to.row, m.to.col);
     
     if (piece >= 'a' && piece <= 'z') {
-        if (Board::getTurn() == false) {
-            errorMessage(ErrorMessage::squareIsOccupied);
+        if (!Board::getTurn()) {
+            if(errorMessagesOn){errorMessage(ErrorMessage::squareIsOccupied);}
             return false;
         }
     }
-    else if (piece >= 'A' && piece <= 'Z') {
-        if (Board::getTurn() == true) {
-            errorMessage(ErrorMessage::squareIsOccupied);
-            return false;
-        }
+    else if (piece >= 'A' && piece <= 'Z' && Board::getTurn()) {
+        if(errorMessagesOn){errorMessage(ErrorMessage::squareIsOccupied);}
+        return false;
     }
     
     return true;
@@ -485,8 +483,6 @@ Figure& Board::operator()(int row, int col) {
 Figure Board::operator()(int row, int col) const {
     return *(board + (col + row * BOARD_SIZE));
 }
-
-
 
 
 // check if user input is in proper format
@@ -709,46 +705,80 @@ public:
 
 
 // Check if move of figure is valid according to chess rules
-bool Board::valid(const Move& m)//doloz argument errormessages on albo off
-{
+bool Board::valid(const Move& m, bool errorMessagesOn=true) {
     Board board = *this;
     vector<Coord> list;
     Figure* figure = FigureFactory::getFigure(*board(m.from.row, m.from.col));
     
-    if (!(isPieceSelected(m))) {
+    if (!(isPieceSelected(m, errorMessagesOn))) {
         return false;
     }
     
-    if (!(isSquareAvailable(m)))
+    if (!(isSquareAvailable(m, errorMessagesOn)))
         return false;
     
-    if (!(figure->valid(m, list)))
+    if (!figure->valid(m, list)) //TODO dolozyc wylaczanie errorMessages
         return false;
+    
     
     //początek dopisywania kodu walidującego pola na szachownicy
     int pion = m.to.row - m.from.row;
     int poziom = m.to.col - m.from.col;
-    char fig = *board(m.from.row, m.from.col);
-    if(poziom==0){
-        
+    //czy na koncowym polu ruchu nie stoi bierka swojego koloru
+    if(islower(*board(m.to.row, m.to.col)) == islower(*board(m.from.row, m.from.col))){
+        if(errorMessagesOn){errorMessage(ErrorMessage::squareIsOccupied);}
+        return false;
     }
-    else if(pion==0){
-        
-    }
-    else if(!(fig=='n') && !(fig=='N')){
-        
-    }
-    else{
-        
-    }
-    //komcepcja - dodanie metod
-    //metody te sprawdzają czy w pionie, poziomie lub na skos pomiedzy startem a koncem nie ma innych pionow
-    //dla skoczka tylko koncowe pole sprawdzamy bo skoczek nie moze bic swoich wlasnych pionow
-    //dla pozostalych figur jak ruch w pionie lub poziomie to sprawdzamy czy nie ma figur po drodze i czy na koncu nie ma wlasnej
-    //dla ruchu po skosie tez - nie trzeba sprawdzac juz czy figura moze sie tak ruszac tylko czy nic nie stoi
-    //wyjatkiem skoczek, tutaj tylko sprawdzamy koncowe pole czy mu tam nie stoi wlasna figura
     
-    //koniec dopisywania kodu walidującego pola na szachownicy
+    int stepV = (m.from.col - m.to.col)/abs(m.from.col - m.to.col);
+    int stepH = (m.from.row - m.to.row)/abs(m.from.row - m.to.row);
+    
+    
+    //jezeli na koncowym polu ruchu nie stoi bierka swojego koloru to testujemy pola na sciezce ruchu figury
+    //jezeli tylko ruch w pionie
+    if(poziom==0){
+        //czy nic nie stoi na drodze bierki
+        int i = m.from.row;
+        while(i!=m.to.row){
+            if(*board(i,m.from.col)!=' '){
+                if(errorMessagesOn){errorMessage(ErrorMessage::movementOverFigure);}
+                return false;
+            }
+            i+=stepV;
+        }
+    }
+    //jezeli ruch tylko w poziomie
+    else if(pion==0){
+        int i = m.from.col;
+        while(i!=m.to.col){
+            if(*board(m.from.row, i)){
+                if(errorMessagesOn){errorMessage(ErrorMessage::movementOverFigure);}
+                return false;
+            }
+            i+=stepH;
+        }
+    }
+    //ruch jest w pionie i w poziomie
+    else{
+        //czy ruch wykonuje skoczek? jezeli tak, to nie sprawdzamy czy na jego drodze cos stoi bo moze stac
+        if(*board(m.from.row, m.from.col)=='n' || *board(m.from.row,m.from.col)=='N'){
+            return true;
+        } else{
+            //jak nie skoczek to musimy sprawdzac
+            //ruch jest tylko po przekatnej
+            int i = m.from.row;
+            int j = m.from.col;
+            while(i!=m.to.row && j!=m.to.col){
+                if(*board(i,j)==' '){
+                    if(errorMessagesOn){errorMessage(ErrorMessage::movementOverFigure);}
+                    return false;
+                }
+                i+=stepV;
+                j+=stepH;
+            }
+        }
+    }
+    
     
     return true;
 }
