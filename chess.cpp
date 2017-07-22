@@ -740,11 +740,28 @@ bool Board::valid(const Move& m, bool errorMessagesOn) {
     
     vector<Coord>::iterator it;
     
+    //is our piece a pawn?
+    //if so, does it move across
+    
+    if (*board(m.from.row, m.from.col) == 'p' || *board(m.from.row, m.from.col) == 'P') {
+        
+        int poziom = m.to.col - m.from.col; //checks whether the pawn moves horizontally
+        
+        if (poziom != 0) {
+            //pawn moves sideways - then its final field has to be occupied by other player's piece
+            
+            if (*board(m.to.row, m.to.col) == ' ' ||
+                islower(*board(m.to.row, m.to.col)) == islower(*board(m.from.row, m.from.col))) {
+                if (errorMessagesOn) { errorMessage(ErrorMessage::badPieceMovement); }
+                return false;
+            }
+        }
+    }
+    
     
     //check whether all the fields that figure passes are empty
     for (it = list.begin() ; it != list.end(); ++it) {
         
-        if(list.size()==1){break;}
         //if any of the fields on the figure move are not empty, then such a move is illegal
         //with the exception for a knight
         //but for a knight the list is empty so we do not check for it
@@ -753,47 +770,10 @@ bool Board::valid(const Move& m, bool errorMessagesOn) {
             return false;
         }
     }
-    cout << "got here" << endl;
-    //if this is the end field where the piece goes then it can be occupied but only by
-    //the other player's piece
-    //and one has to check separately a pawn because if the pawn moves forwards
-    //then its end field has to be empty
-    //if it moves sideways the end field has to be occupied by other player's figure
     
     
-    //is our piece a pawn?
-    if (*board(m.from.row, m.from.col) == 'p' || *board(m.from.row, m.from.col) == 'P') {
-        cout << "We are dealing with a pawn" << endl;
-        //is the pawn moving straight fowards? then its end field has to be empty
-        cout << "Do we move between columns?" << m.to.col - m.from.col << endl;
-        
-        int poziom = m.to.col - m.from.col; //checks whether the pawn moves horizontally
-        
-        if (poziom == 0) { //pawn moves straight forward
-            cout << "We are dealing with forward move of a pawn" << endl;
-            if (*board(m.to.row, m.to.col) != ' ') {
-                if (errorMessagesOn) { errorMessage(ErrorMessage::squareIsOccupied); }
-                return false;
-            }
-        } else {  //pawn moves sideways - then its final field has to be occupied by other player's piece
-            cout << "We are dealing with across movement of a pawn" << endl;
-            cout << "Is end square empty ->?" << (*board(m.to.row, m.to.col) == ' ') << endl;
-            cout << "If not empty, is end square with other player piece?" << (islower(*board(m.to.row, m.to.col)) == islower(*board(m.from.row, m.from.col))  )<< endl;
-            
-            if (*board(m.to.row, m.to.col) == ' ' ||
-                islower(*board(m.to.row, m.to.col)) == islower(*board(m.from.row, m.from.col))) {
-                if (errorMessagesOn) { errorMessage(ErrorMessage::badPieceMovement); }
-                return false;
-            }
-        }
-    } else {
-        cout << "We are not dealing with a pawn" << endl;
-        //for all other figures the end field has to be either empty or occupied by other player's piece
-        if(*board(m.to.row, m.to.col)!=' ' && islower(*board(m.to.row, m.to.col)) == islower(*board(m.from.row, m.from.col))){
-            if(errorMessagesOn){errorMessage(ErrorMessage::squareIsOccupied);}
-            return false;
-        }
-    }
+    
+    
     
     
     return true;
