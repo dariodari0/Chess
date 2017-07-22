@@ -706,6 +706,7 @@ public:
 
 // Check if move of figure is valid according to chess rules
 bool Board::valid(const Move& m, bool errorMessagesOn=true) {
+    
     Board board = *this;
     vector<Coord> list;
     Figure* figure = FigureFactory::getFigure(*board(m.from.row, m.from.col));
@@ -717,7 +718,7 @@ bool Board::valid(const Move& m, bool errorMessagesOn=true) {
     if (!(isSquareAvailable(m, errorMessagesOn)))
         return false;
     
-    if (!figure->valid(m, list)) //TODO dolozyc wylaczanie errorMessages
+    if (!figure->valid(m, list)) //TODO ?dolozyc wylaczanie errorMessages?
         return false;
     
     
@@ -731,19 +732,22 @@ bool Board::valid(const Move& m, bool errorMessagesOn=true) {
     }
     
     
-    int stepV = 0;
-    if(m.from.col-m.to.col){stepV = (m.from.col - m.to.col)/abs(m.from.col - m.to.col);}
     int stepH = 0;
-    if(m.from.row-m.to.row){stepH = (m.from.row - m.to.row)/abs(m.from.row - m.to.row);}
+    if(m.from.col-m.to.col){stepH = (m.to.col - m.from.col)/abs(m.from.col - m.to.col);}
+    int stepV = 0;
+    if(m.from.row-m.to.row){stepV = (m.to.row - m.from.row)/abs(m.from.row - m.to.row);}
     
     
     //jezeli na koncowym polu ruchu nie stoi bierka swojego koloru to testujemy pola na sciezce ruchu figury
     //jezeli tylko ruch w pionie
     if(poziom==0){ //jezeli nie ma przemieszczenia w poziomie => tzn tylko jest w pionie
-        
+        cout << "Ruch w pionie" << endl;
         //czy nic nie stoi na drodze bierki
-        int i = m.from.row+1;
+        int i = m.from.row+stepV;
         while(i!=m.to.row){
+            cout << "Analizowane pole ->" << i << ' ' << m.to.col<< endl;
+            cout << "Zawartosc pola" << *board(i, m.to.col) << endl;
+            cout << "Licznik petli" << i - (m.from.row+1) << endl;
             if(*board(i,m.to.col)!=' '){
                 if(errorMessagesOn){errorMessage(ErrorMessage::movementOverFigure);}
                 return false;
@@ -753,7 +757,7 @@ bool Board::valid(const Move& m, bool errorMessagesOn=true) {
     }
     //jezeli ruch tylko w poziomie
     else if(pion==0){
-        int i = m.from.col+1;
+        int i = m.from.col+stepH;
         while(i!=m.to.row){
             if(*board(m.to.row, i)){
                 if(errorMessagesOn){errorMessage(ErrorMessage::movementOverFigure);}
@@ -770,8 +774,8 @@ bool Board::valid(const Move& m, bool errorMessagesOn=true) {
         } else{
             //jak nie skoczek to musimy sprawdzac
             //ruch jest tylko po przekatnej
-            int i = m.from.row+1;
-            int j = m.from.col+1;
+            int i = m.from.row+stepV;
+            int j = m.from.col+stepH;
             while(i!=m.to.row && j!=m.to.col){
                 if(*board(i,j)==' '){
                     if(errorMessagesOn){errorMessage(ErrorMessage::movementOverFigure);}
