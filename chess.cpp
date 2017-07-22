@@ -200,7 +200,6 @@ public:
         if (m.to.col == m.from.col + 1 && m.to.row == m.from.row + 1) {
             return true;
         }
-        
         if (m.to.col == m.from.col - 1 && m.to.row == m.from.row) {
             return true;
         }
@@ -711,82 +710,26 @@ bool Board::valid(const Move& m, bool errorMessagesOn=true) {
     vector<Coord> list;
     Figure* figure = FigureFactory::getFigure(*board(m.from.row, m.from.col));
     
+    //check whether on the start field is any figure
     if (!(isPieceSelected(m, errorMessagesOn))) {
         return false;
     }
     
+    //check whether the end field is either empty or has other player's figure
     if (!(isSquareAvailable(m, errorMessagesOn)))
         return false;
     
+    //check whether the move itself is correct for the chosen figure - we do not check whether
+    //all the fields that a figure passes are empty here
     if (!figure->valid(m, list)) //TODO ?dolozyc wylaczanie errorMessages?
         return false;
     
-    
-    //początek dopisywania kodu walidującego pola na szachownicy
-    int pion = m.to.row - m.from.row; //jakie przemieszczenie w pionie o ile pol
-    int poziom = m.to.col - m.from.col; //jakie przemieszczenie w poziomie o ile pol
-    //czy na koncowym polu ruchu nie stoi bierka swojego koloru
-    if(*board(m.to.row,m.to.col)!=' ' && islower(*board(m.to.row, m.to.col)) == islower(*board(m.from.row, m.from.col))){
-        if(errorMessagesOn){errorMessage(ErrorMessage::squareIsOccupied);}
-        return false;
-    }
-    
-    
-    int stepH = 0;
-    if(m.from.col-m.to.col){stepH = (m.to.col - m.from.col)/abs(m.from.col - m.to.col);}
-    int stepV = 0;
-    if(m.from.row-m.to.row){stepV = (m.to.row - m.from.row)/abs(m.from.row - m.to.row);}
-    
-    
-    //jezeli na koncowym polu ruchu nie stoi bierka swojego koloru to testujemy pola na sciezce ruchu figury
-    //jezeli tylko ruch w pionie
-    if(poziom==0){ //jezeli nie ma przemieszczenia w poziomie => tzn tylko jest w pionie
-        cout << "Ruch w pionie" << endl;
-        //czy nic nie stoi na drodze bierki
-        int i = m.from.row+stepV;
-        while(i!=m.to.row){
-            cout << "Analizowane pole ->" << i << ' ' << m.to.col<< endl;
-            cout << "Zawartosc pola" << *board(i, m.to.col) << endl;
-            cout << "Licznik petli" << i - (m.from.row+1) << endl;
-            if(*board(i,m.to.col)!=' '){
-                if(errorMessagesOn){errorMessage(ErrorMessage::movementOverFigure);}
-                return false;
-            }
-            i+=stepV;
+    //check whether all the fields that figure passes are empty
+    for (vector<Coord>::iterator it = list.begin() ; it != list.end(); ++it) {
+        if(*board(it.base()->row, it.base()->col)!=' '){
+            return false;
         }
     }
-    //jezeli ruch tylko w poziomie
-    else if(pion==0){
-        int i = m.from.col+stepH;
-        while(i!=m.to.row){
-            if(*board(m.to.row, i)){
-                if(errorMessagesOn){errorMessage(ErrorMessage::movementOverFigure);}
-                return false;
-            }
-            i+=stepH;
-        }
-    }
-    //ruch jest w pionie i w poziomie
-    else{
-        //czy ruch wykonuje skoczek? jezeli tak, to nie sprawdzamy czy na jego drodze cos stoi bo moze stac
-        if(*board(m.from.row, m.from.col)=='n' || *board(m.from.row,m.from.col)=='N'){
-            return true;
-        } else{
-            //jak nie skoczek to musimy sprawdzac
-            //ruch jest tylko po przekatnej
-            int i = m.from.row+stepV;
-            int j = m.from.col+stepH;
-            while(i!=m.to.row && j!=m.to.col){
-                if(*board(i,j)==' '){
-                    if(errorMessagesOn){errorMessage(ErrorMessage::movementOverFigure);}
-                    return false;
-                }
-                i+=stepV;
-                j+=stepH;
-            }
-        }
-    }
-    
     
     return true;
 }
