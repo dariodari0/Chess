@@ -722,8 +722,8 @@ bool Board::valid(const Move& m, bool errorMessagesOn=true) {
     
     
     //początek dopisywania kodu walidującego pola na szachownicy
-    int pion = m.to.row - m.from.row;
-    int poziom = m.to.col - m.from.col;
+    int pion = m.to.row - m.from.row; //jakie przemieszczenie w pionie o ile pol
+    int poziom = m.to.col - m.from.col; //jakie przemieszczenie w poziomie o ile pol
     //czy na koncowym polu ruchu nie stoi bierka swojego koloru
     if(*board(m.to.row,m.to.col)!=' ' && islower(*board(m.to.row, m.to.col)) == islower(*board(m.from.row, m.from.col))){
         if(errorMessagesOn){errorMessage(ErrorMessage::squareIsOccupied);}
@@ -739,12 +739,12 @@ bool Board::valid(const Move& m, bool errorMessagesOn=true) {
     
     //jezeli na koncowym polu ruchu nie stoi bierka swojego koloru to testujemy pola na sciezce ruchu figury
     //jezeli tylko ruch w pionie
-    if(poziom==0){
+    if(poziom==0){ //jezeli nie ma przemieszczenia w poziomie => tzn tylko jest w pionie
         
         //czy nic nie stoi na drodze bierki
-        int i = m.from.col+1;
-        while(i!=m.to.col){
-            if(*board(m.from.row,i)!=' '){
+        int i = m.from.row+1;
+        while(i!=m.to.row){
+            if(*board(i,m.to.col)!=' '){
                 if(errorMessagesOn){errorMessage(ErrorMessage::movementOverFigure);}
                 return false;
             }
@@ -753,9 +753,9 @@ bool Board::valid(const Move& m, bool errorMessagesOn=true) {
     }
     //jezeli ruch tylko w poziomie
     else if(pion==0){
-        int i = m.from.row+1;
+        int i = m.from.col+1;
         while(i!=m.to.row){
-            if(*board(i, m.from.col)){
+            if(*board(m.to.row, i)){
                 if(errorMessagesOn){errorMessage(ErrorMessage::movementOverFigure);}
                 return false;
             }
