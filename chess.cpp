@@ -24,7 +24,7 @@
  3. xZrobić walidacje pól pomiędzy ruchem, należy wykorzystać listę vector<Coord> list która jest uzupełniona polami do sprawdzenia.
 	Dla większości figur jeśli pole nie jest puste to oznacza błąd, za wyjątkiem pionka: jeśli pionek wykona ruch na ukos to musi być tam pionek przeciwnika, jeśli 2 do przodu to sprawdza tak jak reszte figur.
  4. Dostosowac funkcję sprawdzającą szachowanie
- 5. Dostosować zwracanie błędów dla gracza (w tej chwili zostały usunięte z funkcji walidująych figury)
+ 5. xDostosować zwracanie błędów dla gracza (w tej chwili zostały usunięte z funkcji walidująych figury)
  
  */
 
@@ -94,13 +94,6 @@ void clearLine(short y);
 void clearScreen();
 void clearLinesFrom(short y, short count);
 void errorMessage(ErrorMessage::ErrorMessageTypes msg);
-bool king(const Move &m, Board board, bool whites);
-bool king(const Move &m, Board board);
-bool queen(const Move &m, Board board);
-bool bishop(const Move &m, Board board);
-bool knight(const Move &m, Board board);
-bool rook(const Move &m, Board board);
-bool pawn(const Move &m, Board board, bool whites);
 bool is_Deadlocked(const Move &m, Board board, bool whites);
 
 
@@ -131,25 +124,32 @@ struct Move {
         to.row = BOARD_SIZE - (line[3] - '1') - 1;
     }
     
-    bool valid();
+    void Fill(char fromCol, int fromRow, char toCol, int toRow) {
+        from.col = fromCol;
+        from.row = fromRow;
+        to.col = toCol;
+        to.row = toRow;
+    }
+    
+    bool valid(bool errorMessagesOn=true);
 };
 
-bool Move::valid() {
+bool Move::valid(bool errorMessagesOn) {
     
     if (from.col < 0 || from.col >= BOARD_SIZE) {
-        errorMessage(ErrorMessage::coordBeyondBoard);
+        if(errorMessagesOn){errorMessage(ErrorMessage::coordBeyondBoard);}
         return false;
     }
     else if (to.col < 0 || to.col >= BOARD_SIZE) {
-        errorMessage(ErrorMessage::coordBeyondBoard);
+        if(errorMessagesOn){errorMessage(ErrorMessage::coordBeyondBoard);}
         return false;
     }
     else if (from.row < 0 || from.row > BOARD_SIZE) {
-        errorMessage(ErrorMessage::coordBeyondBoard);
+        if(errorMessagesOn){errorMessage(ErrorMessage::coordBeyondBoard);}
         return false;
     }
     else if (to.row < 0 || to.row > BOARD_SIZE) {
-        errorMessage(ErrorMessage::coordBeyondBoard);
+        if(errorMessagesOn){errorMessage(ErrorMessage::coordBeyondBoard);}
         return false;
     }
     return true;
@@ -271,7 +271,7 @@ class Queen : public Bishop{
 public:
     bool valid(const Move &m, vector<Coord>& list, bool errorMessagesOn=true)
     {
-        if (Bishop::valid(m, list))
+        if (Bishop::valid(m, list, errorMessagesOn))
             return true;
         
         int col_diff = abs(m.to.col - m.from.col);
@@ -382,7 +382,7 @@ public:
     Move getMove();
     // true = whites, false = blacks
     static bool getTurn() { return whites; }
-    bool valid(const Move& m, bool errorMessagesOn=true);
+    bool valid(const Move& m, bool errorMessagesOn=true, bool isDeadlockMode=false);
     Board& operator=(const BoardOps boardOps);
     friend ostream& operator<<(ostream& os, const Board& board);
     Board& operator!();
@@ -653,6 +653,7 @@ void Board::init()
     }
 }
 
+
 class Pawn : public Figure {
 public:
     bool valid(const Move &m, vector<Coord>& list, bool errorMessagesOn = true) {
@@ -716,7 +717,7 @@ public:
 
 
 // Check if move of figure is valid according to chess rules
-bool Board::valid(const Move& m, bool errorMessagesOn) {
+bool Board::valid(const Move& m, bool errorMessagesOn, bool isDeadlockMode) {
     Board board = *this;
     vector<Coord> list;
     Figure* figure = FigureFactory::getFigure(*board(m.from.row, m.from.col));
@@ -727,12 +728,13 @@ bool Board::valid(const Move& m, bool errorMessagesOn) {
     }
     
     //check whether the end field is either empty or has other player's figure
-    if (!(isSquareAvailable(m, errorMessagesOn)))
+    if (!(isSquareAvailable(m, errorMessagesOn))) {
         return false;
+    }
     
     //check whether the move itself is correct for the chosen figure - we do not check whether
     //all the fields that a figure passes are empty here
-    if (!figure->valid(m, list)) {
+    if (!figure->valid(m, list, errorMessagesOn)) {
         return false;
     }
     
@@ -757,6 +759,7 @@ bool Board::valid(const Move& m, bool errorMessagesOn) {
         }
     }
     
+    
     //if we are not dealing with a pawn that moves across, we do not have final fields in the list
     //and we only check whteher intermediary fields are empty
     //if it is a knight, no fields are added to the list and then we do not check them
@@ -765,6 +768,12 @@ bool Board::valid(const Move& m, bool errorMessagesOn) {
             if(errorMessagesOn){errorMessage(ErrorMessage::movementOverFigure);}
             return false;
         }
+    }
+    
+    
+    
+    if((*board(m.from.row, m.from.col) == 'k' || *board(m.from.row, m.from.col) == 'K') && isDeadlockMode==false){
+        return !is_Deadlocked(m, board, Board::getTurn());
     }
     
     return true;
@@ -863,110 +872,45 @@ void errorMessage(ErrorMessage::ErrorMessageTypes msg)
 }
 
 
-/*
- 
- //this function checks if the king is deadlocked(to be used in king's move validation[king])
- 
- bool is_Deadlocked(const Move &m, Board board, bool whites) {
- 
- int toInt = m.to.row;
- int toCh = m.to.col;
- 
- char figure;
- 
- 
- //setting up the Move structures for each enemy figure
- for (int i = 0; i<BOARD_SIZE; i++) {
- for (int j = 0; j<BOARD_SIZE; j++) {
- Figure* figure = FigureFactory::getFigure(*board(j, i));
- 
- 
- if (whites) {
- 
- if (figure == 'k') {
- 
- m_King.Fill(i, j, toCh, toInt);
- if (king(m_King, board)) {
- return true;
- }
- }
- if (figure == 'q') {
- m_Queen.Fill(i, j, toCh, toInt);
- if (queen(m_Queen, board)){
- return true;
- }
- }
- if (figure == 'b') {
- m_Bishop.Fill(i, j, toCh, toInt);
- if (bishop(m_Bishop, board)){
- return true;
- }
- }
- if (figure == 'n') {
- m_Knight.Fill(i, j, toCh, toInt);
- if (knight(m_Knight, board)){
- return true;
- }
- }
- if (figure == 'r') {
- m_Rook.Fill(i, j, toCh, toInt);
- if (rook(m_Rook, board)){
- return true;
- }
- }
- if (figure == 'p') {
- m_Pawn.Fill(i, j, toCh, toInt);
- if (pawn(m_Pawn, board, whites)){
- return true;
- }
- }
- }
- 
- if (!whites) {
- 
- if (figure == 'K') {
- m_King.Fill(i, j, toCh, toInt);
- if (king(m_King, board)) {
- return true;
- }
- }
- if (figure == 'Q') {
- m_Queen.Fill(i, j, toCh, toInt);
- if (queen(m_Queen, board)){
- return true;
- }
- }
- if (figure == 'B') {
- m_Bishop.Fill(i, j, toCh, toInt);
- if (bishop(m_Bishop, board)){
- return true;
- }
- }
- if (figure == 'N') {
- m_Knight.Fill(i, j, toCh, toInt);
- if (knight(m_Knight, board)){
- return true;
- }
- }
- if (figure == 'R') {
- m_Rook.Fill(i, j, toCh, toInt);
- if (rook(m_Rook, board)){
- return true;
- }
- }
- if (figure == 'P') {
- m_Pawn.Fill(i, j, toCh, toInt);
- if (pawn(m_Pawn, board, whites)){
- return true;
- }
- }
- }
- }
- }
- 
- return false;
- }
- */
+
+
+//this function checks if the king is deadlocked(to be used in king's move validation[king])
+
+bool is_Deadlocked(const Move &m, Board board, bool whites) {
+    
+    int toInt = m.to.row;
+    int toCh = m.to.col;
+    int fromInt = m.from.row;
+    int fromCh = m.from.col;
+    Move reverse;
+    reverse.Fill(toCh, toInt, fromCh, fromInt);
+    
+    Move tempMove;
+    board.changeTurn(); //we want to check the other player's pieces
+    board+=m;
+    //setting up the Move structures for each enemy figure
+    for (int i = 0; i<BOARD_SIZE; i++) {
+        for (int j = 0; j<BOARD_SIZE; j++) {
+            
+            tempMove.Fill(i,j, toCh, toInt);
+            //is a movement of any figure of an enemy to the king destination possible?
+            //if it is possible, return true - killing of a king is possible
+            //valid function is run in no errors mode and is deadlocked mode
+            if(board.valid(tempMove, false, true)){
+                cout << "Znaleziono potencjalne szachowanie, krol nie moze wykonac tego ruchu" << endl;
+                board.changeTurn(); //revert previous change of players
+                board+=reverse; //revert king's move
+                return true;
+            }
+        }
+    }
+    //if the board was empty, killing a king is not possible
+    //if there is no piece that can kill a king, then killing of a king is not possible
+    board.changeTurn(); //revert previous change of players
+    board+=reverse; //revert king's move
+    return false;
+}
+
 
 
 bool endOfGame(Board board)
