@@ -23,7 +23,7 @@
  2. xDokończyć funkcje validującą Board, tak aby uwzględniała walidacje figur oraz walidacje pól pomiędzy ruchem
  3. xZrobić walidacje pól pomiędzy ruchem, należy wykorzystać listę vector<Coord> list która jest uzupełniona polami do sprawdzenia.
 	Dla większości figur jeśli pole nie jest puste to oznacza błąd, za wyjątkiem pionka: jeśli pionek wykona ruch na ukos to musi być tam pionek przeciwnika, jeśli 2 do przodu to sprawdza tak jak reszte figur.
- 4. Dostosowac funkcję sprawdzającą szachowanie
+ 4. xDostosowac funkcję sprawdzającą szachowanie
  5. xDostosować zwracanie błędów dla gracza (w tej chwili zostały usunięte z funkcji walidująych figury)
  
  */
@@ -94,7 +94,6 @@ void clearLine(short y);
 void clearScreen();
 void clearLinesFrom(short y, short count);
 void errorMessage(ErrorMessage::ErrorMessageTypes msg);
-bool is_Deadlocked(const Move &m, Board board, bool whites);
 
 
 //STRUCTURES AND CLASSES --------------------------------------------------------------------------
@@ -390,7 +389,7 @@ public:
     Figure& operator()(int x, int y);
     Figure operator()(int x, int y) const;
     bool valid(string& line);
-    
+    bool is_Deadlocked(const Move &m, bool whites);
 };
 
 
@@ -773,7 +772,7 @@ bool Board::valid(const Move& m, bool errorMessagesOn, bool isDeadlockMode) {
     
     
     if((*board(m.from.row, m.from.col) == 'k' || *board(m.from.row, m.from.col) == 'K') && isDeadlockMode==false){
-        return !is_Deadlocked(m, board, Board::getTurn());
+        return !is_Deadlocked(m, Board::getTurn());
     }
     
     return true;
@@ -876,7 +875,7 @@ void errorMessage(ErrorMessage::ErrorMessageTypes msg)
 
 //this function checks if the king is deadlocked(to be used in king's move validation[king])
 
-bool is_Deadlocked(const Move &m, Board board, bool whites) {
+bool Board::is_Deadlocked(const Move &m, bool whites) {
     
     int toInt = m.to.row;
     int toCh = m.to.col;
@@ -886,8 +885,8 @@ bool is_Deadlocked(const Move &m, Board board, bool whites) {
     reverse.Fill(toCh, toInt, fromCh, fromInt);
     
     Move tempMove;
-    board.changeTurn(); //we want to check the other player's pieces
-    board+=m;
+    changeTurn(); //we want to check the other player's pieces
+    makeMove(m);
     //setting up the Move structures for each enemy figure
     for (int i = 0; i<BOARD_SIZE; i++) {
         for (int j = 0; j<BOARD_SIZE; j++) {
@@ -896,18 +895,18 @@ bool is_Deadlocked(const Move &m, Board board, bool whites) {
             //is a movement of any figure of an enemy to the king destination possible?
             //if it is possible, return true - killing of a king is possible
             //valid function is run in no errors mode and is deadlocked mode
-            if(board.valid(tempMove, false, true)){
+            if(valid(tempMove, false, true)){
                 cout << "Znaleziono potencjalne szachowanie, krol nie moze wykonac tego ruchu" << endl;
-                board.changeTurn(); //revert previous change of players
-                board+=reverse; //revert king's move
+                changeTurn(); //revert previous change of players
+                makeMove(reverse); //revert king's move
                 return true;
             }
         }
     }
     //if the board was empty, killing a king is not possible
     //if there is no piece that can kill a king, then killing of a king is not possible
-    board.changeTurn(); //revert previous change of players
-    board+=reverse; //revert king's move
+    changeTurn(); //revert previous change of players
+    makeMove(reverse); //revert king's move
     return false;
 }
 
