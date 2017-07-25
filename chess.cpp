@@ -1,4 +1,4 @@
-//     A   B   C   D   E   F   G   H
+﻿//     A   B   C   D   E   F   G   H
 //   +---+---+---+---+---+---+---+---+
 // 8 | r | n | b | q | k | b | n | r | 8
 //   +---+---+---+---+---+---+---+---+
@@ -17,19 +17,6 @@
 // 1 | R | N | B | Q | K | B | N | R | 1
 //   +---+---+---+---+---+---+---+---+
 //     A   B   C   D   E   F   G   H
-
-/*
- TODO:
- 2. xDokończyć funkcje validującą Board, tak aby uwzględniała walidacje figur oraz walidacje pól pomiędzy ruchem
- 3. xZrobić walidacje pól pomiędzy ruchem, należy wykorzystać listę vector<Coord> list która jest uzupełniona polami do sprawdzenia.
-	Dla większości figur jeśli pole nie jest puste to oznacza błąd, za wyjątkiem pionka: jeśli pionek wykona ruch na ukos to musi być tam pionek przeciwnika, jeśli 2 do przodu to sprawdza tak jak reszte figur.
- 4. xDostosowac funkcję sprawdzającą szachowanie
- 5. xDostosować zwracanie błędów dla gracza (w tej chwili zostały usunięte z funkcji walidująych figury)
- 
- */
-
-
-
 
 //LIBRARIES --------------------------------------------------------------------------------------
 // important for VS
@@ -52,18 +39,19 @@ using namespace std;
 
 // Will be upgraded if necessary
 namespace ErrorMessage {
-    
-    static string playerInputLine;
-    
-    enum ErrorMessageTypes {
-        badFormat,
-        coordBeyondBoard,
-        emptySpaceSelected,
-        wrongColorSelected,
-        badPieceMovement,
-        movementOverFigure,
-        squareIsOccupied
-    };
+
+	static string playerInputLine;
+
+	enum ErrorMessageTypes {
+		badFormat,
+		coordBeyondBoard,
+		emptySpaceSelected,
+		wrongColorSelected,
+		badPieceMovement,
+		movementOverFigure,
+		squareIsOccupied,
+		isDeadlock
+	};
 }
 
 //CONSTANTS ----------------------------------------------------------------------------------------
@@ -73,7 +61,7 @@ const int BOARD_SIZE = 8;
 //CLASS DECLARATIONS -----------------------------------------------------------------------------
 
 class Board;
-class Move;
+struct Move;
 class FigureFactory;
 class Figure;
 class King;
@@ -84,8 +72,8 @@ class Rook;
 class Pawn;
 
 enum class BoardOps {
-    CLEAR_BOARD,
-    INIT_BOARD,
+	CLEAR_BOARD,
+	INIT_BOARD,
 };
 
 //GLOBAL FUNCTION DECLARATIONS -------------------------------------------------------------------
@@ -98,330 +86,371 @@ void errorMessage(ErrorMessage::ErrorMessageTypes msg);
 
 //STRUCTURES AND CLASSES --------------------------------------------------------------------------
 struct Coord {
-    int row;
-    int col;
-    Coord() {}
-    Coord(int row, int col){
-        Coord::row = row;
-        Coord::col = col;
-    }
+	int row;
+	int col;
+	Coord() {}
+	Coord(int row, int col) {
+		Coord::row = row;
+		Coord::col = col;
+	}
 };
 
 struct Move {
-    Coord from;
-    Coord to;
-    Move() {
-        from.col = 0;
-        from.row = 0;
-        to.col = 0;
-        to.row = 0;
-    }
-    Move(string line) {
-        from.col = line[0] - 'A';
-        from.row = BOARD_SIZE - (line[1] - '1') - 1;
-        to.col = line[2] - 'A';
-        to.row = BOARD_SIZE - (line[3] - '1') - 1;
-    }
-    
-    void Fill(char fromCol, int fromRow, char toCol, int toRow) {
-        from.col = fromCol;
-        from.row = fromRow;
-        to.col = toCol;
-        to.row = toRow;
-    }
-    
-    bool valid(bool errorMessagesOn=true);
+	Coord from;
+	Coord to;
+	Move() {
+		from.col = 0;
+		from.row = 0;
+		to.col = 0;
+		to.row = 0;
+	}
+	Move(string line) {
+		from.col = line[0] - 'A';
+		from.row = BOARD_SIZE - (line[1] - '1') - 1;
+		to.col = line[2] - 'A';
+		to.row = BOARD_SIZE - (line[3] - '1') - 1;
+	}
+
+	void Fill(char fromCol, int fromRow, char toCol, int toRow) {
+		from.col = fromCol;
+		from.row = fromRow;
+		to.col = toCol;
+		to.row = toRow;
+	}
+
+	bool valid(bool errorMessagesOn = true);
 };
 
 bool Move::valid(bool errorMessagesOn) {
-    
-    if (from.col < 0 || from.col >= BOARD_SIZE) {
-        if(errorMessagesOn){errorMessage(ErrorMessage::coordBeyondBoard);}
-        return false;
-    }
-    else if (to.col < 0 || to.col >= BOARD_SIZE) {
-        if(errorMessagesOn){errorMessage(ErrorMessage::coordBeyondBoard);}
-        return false;
-    }
-    else if (from.row < 0 || from.row > BOARD_SIZE) {
-        if(errorMessagesOn){errorMessage(ErrorMessage::coordBeyondBoard);}
-        return false;
-    }
-    else if (to.row < 0 || to.row > BOARD_SIZE) {
-        if(errorMessagesOn){errorMessage(ErrorMessage::coordBeyondBoard);}
-        return false;
-    }
-    return true;
+
+	if (from.col < 0 || from.col >= BOARD_SIZE) {
+		if (errorMessagesOn) { errorMessage(ErrorMessage::coordBeyondBoard); }
+		return false;
+	}
+	else if (to.col < 0 || to.col >= BOARD_SIZE) {
+		if (errorMessagesOn) { errorMessage(ErrorMessage::coordBeyondBoard); }
+		return false;
+	}
+	else if (from.row < 0 || from.row > BOARD_SIZE) {
+		if (errorMessagesOn) { errorMessage(ErrorMessage::coordBeyondBoard); }
+		return false;
+	}
+	else if (to.row < 0 || to.row > BOARD_SIZE) {
+		if (errorMessagesOn) { errorMessage(ErrorMessage::coordBeyondBoard); }
+		return false;
+	}
+	return true;
 }
 
 
 
 class Figure {
-    char name;
+	char name;
 public:
-    
-    virtual bool valid(const Move &m, vector<Coord>& list, bool errorMessagesOn = true) {
-        cout << "Something went wrong..." << endl;
-        return false;
-    };
-    
-    char& operator*() { return name; }
-    
-    
-    Figure& operator=(const char name) {
-        this->name = name;
-        return *this;
-    }
-    
-    friend ostream& operator<<(ostream& os, const Figure& figure);
+
+	virtual bool valid(const Move &m, vector<Coord>& list, bool errorMessagesOn = true) {
+		cout << "Something went wrong..." << endl;
+		return false;
+	};
+
+	char& operator*() { return name; }
+
+
+	Figure& operator=(const char name) {
+		this->name = name;
+		return *this;
+	}
+
+	friend ostream& operator<<(ostream& os, const Figure& figure);
 };
 
 
 ostream& operator<<(ostream& os, const Figure& figure) {
-    os << figure.name;
-    return os;
+	os << figure.name;
+	return os;
 }
+class Board {
 
+private:
+	Figure* board;
+	static bool whites;
+
+	void display(ostream& os) const;
+	bool reverse();
+	void init();
+	void makeMove(const Move& m);
+	bool isPieceSelected(const Move &m, bool errorMessagesOn = true);
+	bool isSquareAvailable(const Move &m, bool errorMessagesOn = true);
+
+public:
+
+	Board(int boardSize) { board = new Figure[boardSize * boardSize]; }
+
+	void changeTurn() { whites = !whites; }
+
+	// true = whites, false = blacks
+	static bool getTurn() { return whites; }
+
+	Move getMove();
+
+	bool valid(const Move& m, bool errorMessagesOn = true, bool isDeadlockMode = false);
+	bool valid(string& line);
+
+	Board& operator=(const BoardOps boardOps);
+	friend ostream& operator<<(ostream& os, const Board& board);
+	Board& operator!();
+	Board& operator+=(const Move&);
+	Figure& operator()(int x, int y);
+	Figure operator()(int x, int y) const;
+
+	bool is_Deadlocked(const Move &m);
+};
 
 
 class King : public Figure {
 public:
-    bool valid(const Move &m, vector<Coord>& list, bool errorMessagesOn = true) {
-        
-        if (m.to.col == m.from.col + 1 && m.to.row == m.from.row) {
-            return true;
-        }
-        
-        if (m.to.col == m.from.col  && m.to.row == m.from.row + 1) {
-            return true;
-        }
-        
-        if (m.to.col == m.from.col + 1 && m.to.row == m.from.row + 1) {
-            return true;
-        }
-        if (m.to.col == m.from.col - 1 && m.to.row == m.from.row) {
-            return true;
-        }
-        
-        if (m.to.col == m.from.col  && m.to.row == m.from.row - 1) {
-            return true;
-        }
-        
-        if (m.to.col == m.from.col - 1 && m.to.row == m.from.row - 1) {
-            return true;
-        }
-        
-        if (m.to.col == m.from.col - 1 && m.to.row == m.from.row + 1) {
-            return true;
-        }
-        
-        if (m.to.col == m.from.col + 1 && m.to.row == m.from.row - 1) {
-            return true;
-        }
-        
-        if(errorMessagesOn){errorMessage(ErrorMessage::badPieceMovement);}
-        return false;
-    }
-};
+	bool valid(const Move &m, vector<Coord>& list, bool errorMessagesOn = true) {
 
+		if (m.to.col == m.from.col + 1 && m.to.row == m.from.row) {
+			return true;
+		}
+
+		if (m.to.col == m.from.col  && m.to.row == m.from.row + 1) {
+			return true;
+		}
+
+		if (m.to.col == m.from.col + 1 && m.to.row == m.from.row + 1) {
+			return true;
+		}
+		if (m.to.col == m.from.col - 1 && m.to.row == m.from.row) {
+			return true;
+		}
+
+		if (m.to.col == m.from.col  && m.to.row == m.from.row - 1) {
+			return true;
+		}
+
+		if (m.to.col == m.from.col - 1 && m.to.row == m.from.row - 1) {
+			return true;
+		}
+
+		if (m.to.col == m.from.col - 1 && m.to.row == m.from.row + 1) {
+			return true;
+		}
+
+		if (m.to.col == m.from.col + 1 && m.to.row == m.from.row - 1) {
+			return true;
+		}
+
+		if (errorMessagesOn) { errorMessage(ErrorMessage::badPieceMovement); }
+		return false;
+	}
+};
 
 class Bishop : public Figure {
 public:
-    bool valid(const Move &m, vector<Coord>& list, bool errorMessagesOn = true)
-    {
-        int col_diff = (m.to.col - m.from.col);
-        int row_diff = (m.to.row - m.from.row);
-        
-        //basically in case of bishop the absolute value of vertical and horizontal shifts must be equal(diagonal move)
-        if (abs(col_diff) != abs(row_diff)) {
-            if(errorMessagesOn){errorMessage(ErrorMessage::badPieceMovement);}
-            return false;
-        }
-        
-        else if (row_diff > 0 && col_diff > 0) {
-            for (int i = 1; i < abs(col_diff); i++) {
-                list.push_back( Coord(m.from.row + i, m.from.col + i) );
-            }
-        }
-        
-        else if (row_diff < 0 && col_diff < 0) {
-            for (int i = 1; i < abs(col_diff); i++) {
-                list.push_back( Coord(m.from.row - i, m.from.col - i) );
-            }
-        }
-        
-        else if (row_diff < 0 && col_diff > 0) {
-            for (int i = 1; i<abs(col_diff); i++) {
-                list.push_back (Coord(m.from.row - i, m.from.col + i) );
-            }
-        }
-        
-        else if (row_diff > 0 && col_diff < 0) {
-            for (int i = 1; i < abs(col_diff); i++) {
-                list.push_back( Coord(m.from.row + i, m.from.col - i) );
-            }
-        }
-        
-        return true;
-    }
+	bool valid(const Move &m, vector<Coord>& list, bool errorMessagesOn = true)
+	{
+		int col_diff = (m.to.col - m.from.col);
+		int row_diff = (m.to.row - m.from.row);
+
+		//basically in case of bishop the absolute value of vertical and horizontal shifts must be equal(diagonal move)
+		if (abs(col_diff) != abs(row_diff)) {
+			if (errorMessagesOn) { errorMessage(ErrorMessage::badPieceMovement); }
+			return false;
+		}
+
+		else if (row_diff > 0 && col_diff > 0) {
+			for (int i = 1; i < abs(col_diff); i++) {
+				list.push_back(Coord(m.from.row + i, m.from.col + i));
+			}
+		}
+
+		else if (row_diff < 0 && col_diff < 0) {
+			for (int i = 1; i < abs(col_diff); i++) {
+				list.push_back(Coord(m.from.row - i, m.from.col - i));
+			}
+		}
+
+		else if (row_diff < 0 && col_diff > 0) {
+			for (int i = 1; i<abs(col_diff); i++) {
+				list.push_back(Coord(m.from.row - i, m.from.col + i));
+			}
+		}
+
+		else if (row_diff > 0 && col_diff < 0) {
+			for (int i = 1; i < abs(col_diff); i++) {
+				list.push_back(Coord(m.from.row + i, m.from.col - i));
+			}
+		}
+
+		return true;
+	}
 };
 
-class Queen : public Bishop{
+class Queen : public Bishop {
 public:
-    bool valid(const Move &m, vector<Coord>& list, bool errorMessagesOn=true)
-    {
-        if (Bishop::valid(m, list, errorMessagesOn))
-            return true;
-        
-        int col_diff = abs(m.to.col - m.from.col);
-        int row_diff = abs(m.to.row - m.from.row);
-        
-        if (m.from.col != m.to.col && m.from.row != m.to.row) {
-            if(errorMessagesOn){errorMessage(ErrorMessage::badPieceMovement);}
-            return false;
-        }
-        
-        if (m.from.col > m.to.col) {
-            for (int i = 1; i < col_diff; ++i) {
-                list.push_back(Coord(m.from.row, m.from.col - i));
-            }
-        }
-        if (m.from.col < m.to.col) {
-            for (int i = 1; i < col_diff; ++i) {
-                list.push_back(Coord(m.from.row, m.from.col + i));
-            }
-        }
-        if (m.from.row > m.to.row) {
-            for (int i = 1; i < row_diff; ++i) {
-                list.push_back(Coord(m.from.row - i, m.from.col));
-            }
-        }
-        if (m.from.row < m.to.row) {
-            for (int i = 1; i < row_diff; ++i) {
-                list.push_back(Coord(m.from.row + i, m.from.col));
-            }
-        }
-        
-        return true;
-        
-    }
-};
+	bool valid(const Move &m, vector<Coord>& list, bool errorMessagesOn = true)
+	{
+		if (Bishop::valid(m, list, errorMessagesOn))
+			return true;
 
+		int col_diff = abs(m.to.col - m.from.col);
+		int row_diff = abs(m.to.row - m.from.row);
+
+		if (m.from.col != m.to.col && m.from.row != m.to.row) {
+			if (errorMessagesOn) { errorMessage(ErrorMessage::badPieceMovement); }
+			return false;
+		}
+
+		if (m.from.col > m.to.col) {
+			for (int i = 1; i < col_diff; ++i) {
+				list.push_back(Coord(m.from.row, m.from.col - i));
+			}
+		}
+		if (m.from.col < m.to.col) {
+			for (int i = 1; i < col_diff; ++i) {
+				list.push_back(Coord(m.from.row, m.from.col + i));
+			}
+		}
+		if (m.from.row > m.to.row) {
+			for (int i = 1; i < row_diff; ++i) {
+				list.push_back(Coord(m.from.row - i, m.from.col));
+			}
+		}
+		if (m.from.row < m.to.row) {
+			for (int i = 1; i < row_diff; ++i) {
+				list.push_back(Coord(m.from.row + i, m.from.col));
+			}
+		}
+
+		return true;
+
+	}
+};
 
 class Knight : public Figure {
 public:
-    bool valid(const Move &m, vector<Coord>& list, bool errorMessagesOn = true) {
-        
-        if (abs(m.from.col - m.to.col) == 1 && abs(m.from.row - m.to.row) == 2)
-            return true;
-        
-        if (abs(m.from.col - m.to.col) == 2 && abs(m.from.row - m.to.row) == 1)
-            return true;
-        if(errorMessagesOn){errorMessage(ErrorMessage::badPieceMovement);}
-        return false;
-    }
+	bool valid(const Move &m, vector<Coord>& list, bool errorMessagesOn = true) {
+
+		if (abs(m.from.col - m.to.col) == 1 && abs(m.from.row - m.to.row) == 2)
+			return true;
+
+		if (abs(m.from.col - m.to.col) == 2 && abs(m.from.row - m.to.row) == 1)
+			return true;
+		if (errorMessagesOn) { errorMessage(ErrorMessage::badPieceMovement); }
+		return false;
+	}
 };
 
 class Rook : public Figure {
 public:
-    bool valid(const Move &m, vector<Coord>& list, bool errorMessagesOn = true) {
-        
-        int col_diff = abs(m.to.col - m.from.col);
-        int row_diff = abs(m.to.row - m.from.row);
-        
-        if (m.from.col != m.to.col && m.from.row != m.to.row) {
-            if(errorMessagesOn){errorMessage(ErrorMessage::badPieceMovement);}
-            return false;
-        }
-        
-        if (m.from.col > m.to.col) {
-            for (int i = 1; i < col_diff; ++i) {
-                list.push_back( Coord(m.from.row, m.from.col - i) );
-            }
-        }
-        if (m.from.col < m.to.col) {
-            for (int i = 1; i < col_diff; ++i) {
-                list.push_back( Coord(m.from.row, m.from.col + i) );
-            }
-        }
-        if (m.from.row > m.to.row) {
-            for (int i = 1; i < row_diff; ++i) {
-                list.push_back( Coord(m.from.row - i, m.from.col) );
-            }
-        }
-        if (m.from.row < m.to.row) {
-            for (int i = 1; i < row_diff; ++i) {
-                list.push_back( Coord(m.from.row + i, m.from.col) );
-            }
-        }
-        
-        return true;
-    }
+	bool valid(const Move &m, vector<Coord>& list, bool errorMessagesOn = true) {
+
+		int col_diff = abs(m.to.col - m.from.col);
+		int row_diff = abs(m.to.row - m.from.row);
+
+		if (m.from.col != m.to.col && m.from.row != m.to.row) {
+			if (errorMessagesOn) { errorMessage(ErrorMessage::badPieceMovement); }
+			return false;
+		}
+
+		if (m.from.col > m.to.col) {
+			for (int i = 1; i < col_diff; ++i) {
+				list.push_back(Coord(m.from.row, m.from.col - i));
+			}
+		}
+		if (m.from.col < m.to.col) {
+			for (int i = 1; i < col_diff; ++i) {
+				list.push_back(Coord(m.from.row, m.from.col + i));
+			}
+		}
+		if (m.from.row > m.to.row) {
+			for (int i = 1; i < row_diff; ++i) {
+				list.push_back(Coord(m.from.row - i, m.from.col));
+			}
+		}
+		if (m.from.row < m.to.row) {
+			for (int i = 1; i < row_diff; ++i) {
+				list.push_back(Coord(m.from.row + i, m.from.col));
+			}
+		}
+
+		return true;
+	}
 };
 
-
-
-
-class Board {
-    
-private:
-    Figure* board;
-    
-    void display(ostream& os) const;
-    bool reverse();
-    void init();
-    void makeMove(const Move& m);
-    bool isPieceSelected(const Move &m, bool errorMessagesOn = true);
-    bool isSquareAvailable(const Move &m, bool errorMessagesOn = true);
-    static bool whites;
+class Pawn : public Figure {
 public:
-    
-    Board(int boardSize) { board = new Figure[boardSize * boardSize]; }
-    void changeTurn() { whites = !whites; }
-    Move getMove();
-    // true = whites, false = blacks
-    static bool getTurn() { return whites; }
-    bool valid(const Move& m, bool errorMessagesOn=true, bool isDeadlockMode=false);
-    Board& operator=(const BoardOps boardOps);
-    friend ostream& operator<<(ostream& os, const Board& board);
-    Board& operator!();
-    Board& operator+=(const Move&);
-    Figure& operator()(int x, int y);
-    Figure operator()(int x, int y) const;
-    bool valid(string& line);
-    bool is_Deadlocked(const Move &m, bool whites);
+	bool valid(const Move &m, vector<Coord>& list, bool errorMessagesOn = true) {
+
+		int pawnColor = 1;
+		if (Board::getTurn()) { pawnColor = -1; }
+
+		// pawn moves 1 square forwards
+		if (m.to.row == m.from.row + pawnColor && m.to.col == m.from.col) {
+			list.push_back(Coord(m.from.row + pawnColor, m.from.col));
+			return true;
+		}
+		// pawn moves across and makes a kill
+		else if (m.to.row == m.from.row + pawnColor && m.to.col == m.from.col + 1) {
+			list.push_back(Coord(m.from.row + pawnColor, m.from.col + 1));
+			return true;
+		}
+		else if (m.to.row == m.from.row + pawnColor && m.to.col == m.from.col - 1) {
+			list.push_back(Coord(m.from.row + pawnColor, m.from.col - 1));
+			return true;
+		}
+
+		//is pawn located in its initial row on the chessboard
+		else if (m.from.row == 1 || m.from.row == BOARD_SIZE - 2) {
+			//first movement of a pawn, allowed movement by 1 or 2 fields, moves only forwards and kills crosswise
+			//movement by 2 fields allowed for a pawn
+			if (m.to.row == m.from.row + 2 * pawnColor && m.to.col == m.from.col) {
+				list.push_back(Coord(m.from.row + pawnColor, m.from.col));
+				list.push_back(Coord(m.from.row + 2 * pawnColor, m.from.col));
+				return true;
+			}
+		}
+		if (errorMessagesOn) { errorMessage(ErrorMessage::badPieceMovement); }
+		return false;
+	}
 };
 
 
-bool Board::whites=true;
+
+
+
+
+bool Board::whites = true;
 
 
 // Check if proper piece is selected or space is empty
 bool Board::isPieceSelected(const Move &m, bool errorMessagesOn)
 {
-    Board board = *this;
-    char piece = *board(m.from.row, m.from.col);
-    
-    if (piece >= 'a' && piece <= 'z') {
-        if (Board::getTurn() == true) {
-            if(errorMessagesOn){errorMessage(ErrorMessage::wrongColorSelected);}
-            return false;
-        }
-    }
-    
-    if (piece >= 'A' && piece <= 'Z') {
-        if (Board::getTurn() == false) {
-            if(errorMessagesOn){errorMessage(ErrorMessage::wrongColorSelected);}
-            return false;
-        }
-    }
-    
-    if (piece == ' ') {
-        if(errorMessagesOn){errorMessage(ErrorMessage::emptySpaceSelected);}
-        return false;
-    }
-    
-    return true;
+	Board board = *this;
+	char piece = *board(m.from.row, m.from.col);
+
+	if (piece >= 'a' && piece <= 'z') {
+		if (Board::getTurn() == true) {
+			if (errorMessagesOn) { errorMessage(ErrorMessage::wrongColorSelected); }
+			return false;
+		}
+	}
+
+	if (piece >= 'A' && piece <= 'Z') {
+		if (Board::getTurn() == false) {
+			if (errorMessagesOn) { errorMessage(ErrorMessage::wrongColorSelected); }
+			return false;
+		}
+	}
+
+	if (piece == ' ') {
+		if (errorMessagesOn) { errorMessage(ErrorMessage::emptySpaceSelected); }
+		return false;
+	}
+
+	return true;
 }
 
 
@@ -429,353 +458,314 @@ bool Board::isPieceSelected(const Move &m, bool errorMessagesOn)
 // Check if piece can enter selected square
 bool Board::isSquareAvailable(const Move &m, bool errorMessagesOn)
 {
-    Board board = *this;
-    char piece = *board(m.to.row, m.to.col);
-    
-    if (piece >= 'a' && piece <= 'z') {
-        if (!Board::getTurn()) {
-            if(errorMessagesOn){errorMessage(ErrorMessage::squareIsOccupied);}
-            return false;
-        }
-    }
-    else if (piece >= 'A' && piece <= 'Z' && Board::getTurn()) {
-        if(errorMessagesOn){errorMessage(ErrorMessage::squareIsOccupied);}
-        return false;
-    }
-    
-    return true;
+	Board board = *this;
+	char piece = *board(m.to.row, m.to.col);
+
+	if (piece >= 'a' && piece <= 'z') {
+		if (!Board::getTurn()) {
+			if (errorMessagesOn) { errorMessage(ErrorMessage::squareIsOccupied); }
+			return false;
+		}
+	}
+	else if (piece >= 'A' && piece <= 'Z' && Board::getTurn()) {
+		if (errorMessagesOn) { errorMessage(ErrorMessage::squareIsOccupied); }
+		return false;
+	}
+
+	return true;
 }
 
 
 
 Board& Board::operator=(const BoardOps boardOps) {
-    switch (boardOps) {
-        case BoardOps::CLEAR_BOARD:
-            break;
-        case BoardOps::INIT_BOARD:
-            init();
-            break;
-    }
-    return *this;
+	switch (boardOps) {
+	case BoardOps::CLEAR_BOARD:
+		break;
+	case BoardOps::INIT_BOARD:
+		init();
+		break;
+	}
+	return *this;
 }
 
 
 ostream& operator<<(ostream& os, const Board& board) {
-    clearScreen();
-    board.display(os);
-    return os;
+	clearScreen();
+	board.display(os);
+	return os;
 }
 
 
 Board& Board::operator!() {
-    reverse();
-    return *this;
+	reverse();
+	return *this;
 }
 
 
 Board& Board::operator+=(const Move& m) {
-    makeMove(m);
-    return *this;
+	makeMove(m);
+	return *this;
 }
 
 
 Figure& Board::operator()(int row, int col) {
-    return *(board + (col + row * BOARD_SIZE));
+	return *(board + (col + row * BOARD_SIZE));
 }
 
 
 Figure Board::operator()(int row, int col) const {
-    return *(board + (col + row * BOARD_SIZE));
+	return *(board + (col + row * BOARD_SIZE));
 }
 
 
 // check if user input is in proper format
 bool Board::valid(string& line)
 {
-    line.erase(std::remove(line.begin(), line.end(), ' '), line.end());
-    transform(line.begin(), line.end(), line.begin(), ::toupper);
-    
-    // send player input to ErrorMessage as interpreted by application
-    ErrorMessage::playerInputLine = line;
-    
-    if (line.size() != 4) {
-        errorMessage(ErrorMessage::badFormat);
-        return false;
-    }
-    return true;
+	line.erase(std::remove(line.begin(), line.end(), ' '), line.end());
+	transform(line.begin(), line.end(), line.begin(), ::toupper);
+
+	// send player input to ErrorMessage as interpreted by application
+	ErrorMessage::playerInputLine = line;
+
+	if (line.size() != 4) {
+		errorMessage(ErrorMessage::badFormat);
+		return false;
+	}
+	return true;
 }
 
 
 Move Board::getMove()
 {
-    Move m;
-    string line = "";
-    do {
-        if (Board::getTurn())
-            cout << "White turn:" << endl;
-        else
-            cout << "Black turn:" << endl;
-        
-        getline(cin, line);
-    } while (!valid(line));
-    
-    return m = Move(line);
+	Move m;
+	string line = "";
+	do {
+		if (Board::getTurn())
+			cout << "White turn:" << endl;
+		else
+			cout << "Black turn:" << endl;
+
+		getline(cin, line);
+	} while (!valid(line));
+
+	return m = Move(line);
 }
 
 bool Board::reverse()
 {
-    Board board = *this;
-    const char figuresRowLow[BOARD_SIZE] = { 'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r' };
-    const char figuresRowUp[BOARD_SIZE] = { 'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R' };
-    
-    for (unsigned i = 0; i < BOARD_SIZE; i++) {
-        if (tolower(*board(0, i)) != figuresRowLow[i] || tolower(*board(BOARD_SIZE - 1, i)) != figuresRowLow[i])
-            return false;
-        if (tolower(*board(1, i)) != 'p' || tolower(*board(BOARD_SIZE - 2, i)) != 'p')
-            return false;
-    }
-    
-    if (*board(0, 0) == 'r') {
-        for (unsigned i = 0; i < BOARD_SIZE; i++)
-            board(0, i) = figuresRowUp[i];
-        for (unsigned i = 0; i < BOARD_SIZE; i++)
-            board(1, i) = 'P';
-        
-        for (unsigned i = 0; i < BOARD_SIZE; i++)
-            board(BOARD_SIZE - 1, i) = figuresRowLow[i];
-        for (unsigned i = 0; i < BOARD_SIZE; i++)
-            board(BOARD_SIZE - 2, i) = 'p';
-    }
-    else {
-        for (unsigned i = 0; i < BOARD_SIZE; i++)
-            board(0, i) = figuresRowLow[i];
-        for (unsigned i = 0; i < BOARD_SIZE; i++)
-            board(1, i) = 'p';
-        
-        for (unsigned i = 0; i < BOARD_SIZE; i++)
-            board(BOARD_SIZE - 1, i) = figuresRowUp[i];
-        for (unsigned i = 0; i < BOARD_SIZE; i++)
-            board(BOARD_SIZE - 2, i) = 'P';
-    }
-    
-    return true;
+	Board board = *this;
+	const char figuresRowLow[BOARD_SIZE] = { 'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r' };
+	const char figuresRowUp[BOARD_SIZE] = { 'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R' };
+
+	for (unsigned i = 0; i < BOARD_SIZE; i++) {
+		if (tolower(*board(0, i)) != figuresRowLow[i] || tolower(*board(BOARD_SIZE - 1, i)) != figuresRowLow[i])
+			return false;
+		if (tolower(*board(1, i)) != 'p' || tolower(*board(BOARD_SIZE - 2, i)) != 'p')
+			return false;
+	}
+
+	if (*board(0, 0) == 'r') {
+		for (unsigned i = 0; i < BOARD_SIZE; i++)
+			board(0, i) = figuresRowUp[i];
+		for (unsigned i = 0; i < BOARD_SIZE; i++)
+			board(1, i) = 'P';
+
+		for (unsigned i = 0; i < BOARD_SIZE; i++)
+			board(BOARD_SIZE - 1, i) = figuresRowLow[i];
+		for (unsigned i = 0; i < BOARD_SIZE; i++)
+			board(BOARD_SIZE - 2, i) = 'p';
+	}
+	else {
+		for (unsigned i = 0; i < BOARD_SIZE; i++)
+			board(0, i) = figuresRowLow[i];
+		for (unsigned i = 0; i < BOARD_SIZE; i++)
+			board(1, i) = 'p';
+
+		for (unsigned i = 0; i < BOARD_SIZE; i++)
+			board(BOARD_SIZE - 1, i) = figuresRowUp[i];
+		for (unsigned i = 0; i < BOARD_SIZE; i++)
+			board(BOARD_SIZE - 2, i) = 'P';
+	}
+
+	return true;
 }
 
 void Board::makeMove(const Move& m)
 {
-    Board board = *this;
-    char figure = *board(m.from.row, m.from.col);
-    board(m.from.row, m.from.col) = ' ';
-    board(m.to.row, m.to.col) = figure;
+	Board board = *this;
+	char figure = *board(m.from.row, m.from.col);
+	board(m.from.row, m.from.col) = ' ';
+	board(m.to.row, m.to.col) = figure;
 }
 
 //displays board - takes array board[BOARD_SIZE][BOARD_SIZE]
 // and reads its contents, and displays on the screen
 void Board::display(ostream& os) const
 {
-    clearScreen();
-    Board board = *this;
-    char letter = 0;
-    int i = 0;
-    int j = 0;
-    char k = 0;
-    //row with letters that reprezenting headers of columns
-    cout << "   ";
-    for (letter = 'A'; letter < 'A' + BOARD_SIZE; letter++)
-        cout << "   " << letter;
-    cout << "      \n";
-    
-    //row with a delimited in a chessboard  "    +---+---+---+---+---+---+---+---+   \n";
-    cout << "    ";
-    for (i = 'A'; i<'A' + BOARD_SIZE; i++) {
-        cout << "+---";
-    }
-    cout << "+   \n";
-    
-    // take the array that keeps actual positions of figures and display it on the chessboard
-    
-    for (i = 0; i < BOARD_SIZE; i++) {
-        
-        cout << " " << BOARD_SIZE - i << " ";
-        
-        for (j = 0; j < BOARD_SIZE; j++) {
-            cout << " " << "|" << " " << board(i, j);
-        }
-        cout << " " << "|" << " " << BOARD_SIZE - i << " ";
-        cout << "\n";
-        
-        
-        // delimit each row with figures with a delimiter "    +---+---+---+---+---+---+---+---+   \n";
-        cout << "    ";
-        for (k = 'A'; k<'A' + BOARD_SIZE; k++) {
-            cout << "+---";
-        }
-        cout << "+   \n";
-        
-    }
-    
-    // row with letters that reprezenting headers of columns
-    cout << "   ";
-    for (letter = 'A'; letter < 'A' + BOARD_SIZE; letter++)
-        cout << "   " << letter;
-    cout << "      \n\n";
-    
+	clearScreen();
+	Board board = *this;
+	char letter = 0;
+	int i = 0;
+	int j = 0;
+	char k = 0;
+	//row with letters that reprezenting headers of columns
+	cout << "   ";
+	for (letter = 'A'; letter < 'A' + BOARD_SIZE; letter++)
+		cout << "   " << letter;
+	cout << "      \n";
+
+	//row with a delimited in a chessboard  "    +---+---+---+---+---+---+---+---+   \n";
+	cout << "    ";
+	for (i = 'A'; i<'A' + BOARD_SIZE; i++) {
+		cout << "+---";
+	}
+	cout << "+   \n";
+
+	// take the array that keeps actual positions of figures and display it on the chessboard
+
+	for (i = 0; i < BOARD_SIZE; i++) {
+
+		cout << " " << BOARD_SIZE - i << " ";
+
+		for (j = 0; j < BOARD_SIZE; j++) {
+			cout << " " << "|" << " " << board(i, j);
+		}
+		cout << " " << "|" << " " << BOARD_SIZE - i << " ";
+		cout << "\n";
+
+
+		// delimit each row with figures with a delimiter "    +---+---+---+---+---+---+---+---+   \n";
+		cout << "    ";
+		for (k = 'A'; k<'A' + BOARD_SIZE; k++) {
+			cout << "+---";
+		}
+		cout << "+   \n";
+
+	}
+
+	// row with letters that reprezenting headers of columns
+	cout << "   ";
+	for (letter = 'A'; letter < 'A' + BOARD_SIZE; letter++)
+		cout << "   " << letter;
+	cout << "      \n\n";
+
 }
 
 void Board::init()
 {
-    Board board = *this;
-    const char figuresRow[BOARD_SIZE] = { 'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r' };
-    
-    //memset(this->board, ' ', sizeof(char) * BOARD_SIZE * BOARD_SIZE);
-    for (unsigned i = 0; i < BOARD_SIZE; i++) {
-        board(0, i) = figuresRow[i];
-    }
-    
-    for (unsigned i = 0; i < BOARD_SIZE; i++) {
-        board(1, i) = 'p';
-    }
-    
-    for(unsigned i=0; i<BOARD_SIZE; i++){
-        for(unsigned j=2; j<BOARD_SIZE-2; j++){
-            board(j,i) = ' ';
-        }
-    }
-    
-    
-    for (unsigned i = 0; i < BOARD_SIZE; i++) {
-        board(BOARD_SIZE - 2, i) = 'P';
-    }
-    
-    for (unsigned i = 0; i < BOARD_SIZE; i++) {
-        board(BOARD_SIZE - 1, i) = toupper(figuresRow[i]);
-    }
+	Board board = *this;
+	const char figuresRow[BOARD_SIZE] = { 'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r' };
+
+	//memset(this->board, ' ', sizeof(char) * BOARD_SIZE * BOARD_SIZE);
+	for (unsigned i = 0; i < BOARD_SIZE; i++) {
+		board(0, i) = figuresRow[i];
+	}
+
+	for (unsigned i = 0; i < BOARD_SIZE; i++) {
+		board(1, i) = 'p';
+	}
+
+	for (unsigned i = 0; i<BOARD_SIZE; i++) {
+		for (unsigned j = 2; j<BOARD_SIZE - 2; j++) {
+			board(j, i) = ' ';
+		}
+	}
+
+
+	for (unsigned i = 0; i < BOARD_SIZE; i++) {
+		board(BOARD_SIZE - 2, i) = 'P';
+	}
+
+	for (unsigned i = 0; i < BOARD_SIZE; i++) {
+		board(BOARD_SIZE - 1, i) = toupper(figuresRow[i]);
+	}
 }
-
-
-class Pawn : public Figure {
-public:
-    bool valid(const Move &m, vector<Coord>& list, bool errorMessagesOn = true) {
-        
-        int pawnColor = 1;
-        if (Board::getTurn()) {pawnColor = -1;}
-        
-        // pawn moves 1 square forwards
-        if (m.to.row == m.from.row + pawnColor && m.to.col == m.from.col) {
-            list.push_back( Coord(m.from.row + pawnColor, m.from.col) );
-            return true;
-        }
-        // pawn moves across and makes a kill
-        else if (m.to.row == m.from.row + pawnColor && m.to.col == m.from.col + 1) {
-            list.push_back( Coord(m.from.row + pawnColor, m.from.col + 1) );
-            return true;
-        }
-        else if (m.to.row == m.from.row + pawnColor && m.to.col == m.from.col - 1) {
-            list.push_back( Coord(m.from.row + pawnColor, m.from.col - 1) );
-            return true;
-        }
-        
-        //is pawn located in its initial row on the chessboard
-        else if (m.from.row == 1 || m.from.row == BOARD_SIZE - 2) {
-            //first movement of a pawn, allowed movement by 1 or 2 fields, moves only forwards and kills crosswise
-            //movement by 2 fields allowed for a pawn
-            if (m.to.row == m.from.row + 2 * pawnColor && m.to.col == m.from.col) {
-                list.push_back( Coord(m.from.row + pawnColor, m.from.col) );
-                list.push_back( Coord(m.from.row + 2 * pawnColor, m.from.col) );
-                return true;
-            }
-        }
-        if(errorMessagesOn){errorMessage(ErrorMessage::badPieceMovement);}
-        return false;
-    }
-};
-
 
 
 class FigureFactory {
 public:
-    static Figure* getFigure(char name)
-    {
-        switch (name) {
-            case 'k':
-            case 'K': return new King();
-            case 'q':
-            case 'Q': return new Queen();
-            case 'b':
-            case 'B': return new Bishop();
-            case 'n':
-            case 'N': return new Knight();
-            case 'r':
-            case 'R': return new Rook();
-            case 'p':
-            case 'P': return new Pawn();
-        }
-        return new Figure();
-    }
+	static Figure* getFigure(char name)
+	{
+		switch (name) {
+		case 'k':
+		case 'K': return new King();
+		case 'q':
+		case 'Q': return new Queen();
+		case 'b':
+		case 'B': return new Bishop();
+		case 'n':
+		case 'N': return new Knight();
+		case 'r':
+		case 'R': return new Rook();
+		case 'p':
+		case 'P': return new Pawn();
+		}
+		return new Figure();
+	}
 };
 
 
 // Check if move of figure is valid according to chess rules
 bool Board::valid(const Move& m, bool errorMessagesOn, bool isDeadlockMode) {
-    Board board = *this;
-    vector<Coord> list;
-    Figure* figure = FigureFactory::getFigure(*board(m.from.row, m.from.col));
-    
-    //check whether on the start field is any figure
-    if (!(isPieceSelected(m, errorMessagesOn))) {
-        return false;
-    }
-    
-    //check whether the end field is either empty or has other player's figure
-    if (!(isSquareAvailable(m, errorMessagesOn))) {
-        return false;
-    }
-    
-    //check whether the move itself is correct for the chosen figure - we do not check whether
-    //all the fields that a figure passes are empty here
-    if (!figure->valid(m, list, errorMessagesOn)) {
-        return false;
-    }
-    
-    vector<Coord>::iterator it;
-    
-    //is our piece a pawn?
-    //if so, does it move across - all other end field situations are checked by other validation functions
-    //only in this case the end field is added to the list and has to be checked
-    
-    if (*board(m.from.row, m.from.col) == 'p' || *board(m.from.row, m.from.col) == 'P') {
-        
-        int poziom = m.to.col - m.from.col; //checks whether the pawn moves horizontally
-        
-        if (poziom != 0) {
-            //pawn moves sideways - then its final field has to be occupied by other player's piece
-            
-            if (*board(m.to.row, m.to.col) == ' ') {
-                if (errorMessagesOn) { errorMessage(ErrorMessage::badPieceMovement); }
-                return false;
-            }
-            return true;
-        }
-    }
-    
-    
-    //if we are not dealing with a pawn that moves across, we do not have final fields in the list
-    //and we only check whteher intermediary fields are empty
-    //if it is a knight, no fields are added to the list and then we do not check them
-    for (it = list.begin() ; it != list.end(); ++it) {
-        if(*board(it.base()->row, it.base()->col)!=' '){
-            if(errorMessagesOn){errorMessage(ErrorMessage::movementOverFigure);}
-            return false;
-        }
-    }
-    
-    
-    
-    if((*board(m.from.row, m.from.col) == 'k' || *board(m.from.row, m.from.col) == 'K') && isDeadlockMode==false){
-        return !is_Deadlocked(m, Board::getTurn());
-    }
-    
-    return true;
+	Board board = *this;
+	vector<Coord> list;
+	Figure* figure = FigureFactory::getFigure(*board(m.from.row, m.from.col));
+
+	//check whether on the start field is any figure
+	if (!(isPieceSelected(m, errorMessagesOn))) {
+		return false;
+	}
+
+	//check whether the end field is either empty or has other player's figure
+	if (!(isSquareAvailable(m, errorMessagesOn))) {
+		return false;
+	}
+
+	//check whether the move itself is correct for the chosen figure - we do not check whether
+	//all the fields that a figure passes are empty here
+	if (!figure->valid(m, list, errorMessagesOn)) {
+		return false;
+	}
+
+	vector<Coord>::iterator it;
+
+	//is our piece a pawn?
+	//if so, does it move across - all other end field situations are checked by other validation functions
+	//only in this case the end field is added to the list and has to be checked
+
+	if (*board(m.from.row, m.from.col) == 'p' || *board(m.from.row, m.from.col) == 'P') {
+
+		//checks whether the pawn moves horizontally
+		if ((m.to.col - m.from.col) != 0) {
+			
+			//pawn moves sideways - then its final field has to be occupied by other player's piece
+			if (*board(m.to.row, m.to.col) == ' ') {
+				if (errorMessagesOn) { errorMessage(ErrorMessage::badPieceMovement); }
+				return false;
+			}
+			return true;
+		}
+	}
+
+
+	//if we are not dealing with a pawn that moves across, we do not have final fields in the list
+	//and we only check whteher intermediary fields are empty
+	//if it is a knight, no fields are added to the list and then we do not check them
+	for (it = list.begin(); it != list.end(); ++it) {
+		
+		if (*board(it->row, it->col) != ' ') {
+			if (errorMessagesOn) { errorMessage(ErrorMessage::movementOverFigure); }
+			return false;
+		}
+	}
+
+
+
+	if ((*board(m.from.row, m.from.col) == 'k' || *board(m.from.row, m.from.col) == 'K') && isDeadlockMode == false) {
+		return !is_Deadlocked(m);
+	}
+
+	return true;
 }
 
 
@@ -785,13 +775,13 @@ bool Board::valid(const Move& m, bool errorMessagesOn, bool isDeadlockMode) {
 #ifdef _WIN32
 void gotoXY(short x, short y)
 {
-    COORD coord = { x, y };
-    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+	COORD coord = { x, y };
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
 #else
 void gotoXY(short x, short y)
 {
-    cout << "\033[" << y << ";" << x << "f" << flush;
+	cout << "\033[" << y << ";" << x << "f" << flush;
 }
 #endif
 
@@ -799,9 +789,9 @@ void gotoXY(short x, short y)
 
 void clearLine(short y)
 {
-    gotoXY(0, y);
-    cout << setw(128) << " ";
-    gotoXY(0, y);
+	gotoXY(0, y);
+	cout << setw(128) << " ";
+	gotoXY(0, y);
 }
 
 
@@ -809,9 +799,9 @@ void clearLine(short y)
 void clearScreen()
 {
 #ifdef _WIN32
-    system("cls");
+	system("cls");
 #else
-    system("clear");
+	system("clear");
 #endif
 }
 
@@ -819,55 +809,59 @@ void clearScreen()
 
 void clearLinesFrom(short y, short count)
 {
-    for (short i = 0; i < count; i++)
-        clearLine(y + i);
+	for (short i = 0; i < count; i++)
+		clearLine(y + i);
 }
 
 
 
 void errorMessage(ErrorMessage::ErrorMessageTypes msg)
 {
-    switch (msg) {
-            
-        case ErrorMessage::badFormat:
-            clearLine(20);
-            cout << "Wrong coordinate format! Try: A2 F3" << endl;
-            break;
-        case ErrorMessage::coordBeyondBoard:
-            clearLine(20);
-            cout << "Coordinates are outside the board! Try between A-H and 1-8" << endl;
-            break;
-        case ErrorMessage::emptySpaceSelected:
-            clearLine(20);
-            cout << "No piece on this square!" << endl;
-            break;
-        case ErrorMessage::wrongColorSelected:
-            clearLine(20);
-            cout << "This is not your piece!" << endl;
-            break;
-        case ErrorMessage::badPieceMovement:
-            clearLine(20);
-            cout << "This piece cannot do such movement!" << endl;
-            break;
-        case ErrorMessage::movementOverFigure:
-            clearLine(20);
-            cout << "This piece cannot move over other figure!" << endl;
-            break;
-        case ErrorMessage::squareIsOccupied:
-            clearLine(20);
-            cout << "One of yours pieces already occupies this field!" << endl;
-            break;
-        default:
-            clearLine(20);
-            cout << "Error!" << endl;
-            
-    }
-    clearLine(21);
-    cout << "Your input: " << ErrorMessage::playerInputLine << endl;
-    cout << endl << "Press Enter to Continue";
-    cin.ignore();
-    clearLinesFrom(20, 3);
-    gotoXY(0, 20);
+	switch (msg) {
+
+	case ErrorMessage::badFormat:
+		clearLine(20);
+		cout << "Wrong coordinate format! Try: A2 F3" << endl;
+		break;
+	case ErrorMessage::coordBeyondBoard:
+		clearLine(20);
+		cout << "Coordinates are outside the board! Try between A-H and 1-8" << endl;
+		break;
+	case ErrorMessage::emptySpaceSelected:
+		clearLine(20);
+		cout << "No piece on this square!" << endl;
+		break;
+	case ErrorMessage::wrongColorSelected:
+		clearLine(20);
+		cout << "This is not your piece!" << endl;
+		break;
+	case ErrorMessage::badPieceMovement:
+		clearLine(20);
+		cout << "This piece cannot do such movement!" << endl;
+		break;
+	case ErrorMessage::movementOverFigure:
+		clearLine(20);
+		cout << "This piece cannot move over other figure!" << endl;
+		break;
+	case ErrorMessage::squareIsOccupied:
+		clearLine(20);
+		cout << "One of yours pieces already occupies this field!" << endl;
+		break;
+	case ErrorMessage::isDeadlock:
+		clearLine(20);
+		cout << "Such a move would have made the king's check!" << endl;
+		break;
+	default:
+		clearLine(20);
+		cout << "Error!" << endl;
+
+	}
+	clearLine(21);
+	cout << "Your input: " << ErrorMessage::playerInputLine << endl;
+	cout << endl << "Press Enter to Continue";
+	cin.ignore();
+	clearLinesFrom(20, 3);
+	gotoXY(0, 20);
 }
 
 
@@ -875,67 +869,67 @@ void errorMessage(ErrorMessage::ErrorMessageTypes msg)
 
 //this function checks if the king is deadlocked(to be used in king's move validation[king])
 
-bool Board::is_Deadlocked(const Move &m, bool whites) {
-    
-    int toInt = m.to.row;
-    int toCh = m.to.col;
-    int fromInt = m.from.row;
-    int fromCh = m.from.col;
-    Move reverse;
-    reverse.Fill(toCh, toInt, fromCh, fromInt);
-    
-    Move tempMove;
-    changeTurn(); //we want to check the other player's pieces
-    makeMove(m);
-    //setting up the Move structures for each enemy figure
-    for (int i = 0; i<BOARD_SIZE; i++) {
-        for (int j = 0; j<BOARD_SIZE; j++) {
-            
-            tempMove.Fill(i,j, toCh, toInt);
-            //is a movement of any figure of an enemy to the king destination possible?
-            //if it is possible, return true - killing of a king is possible
-            //valid function is run in no errors mode and is deadlocked mode
-            if(valid(tempMove, false, true)){
-                cout << "Znaleziono potencjalne szachowanie, krol nie moze wykonac tego ruchu" << endl;
-                changeTurn(); //revert previous change of players
-                makeMove(reverse); //revert king's move
-                return true;
-            }
-        }
-    }
-    //if the board was empty, killing a king is not possible
-    //if there is no piece that can kill a king, then killing of a king is not possible
-    changeTurn(); //revert previous change of players
-    makeMove(reverse); //revert king's move
-    return false;
+bool Board::is_Deadlocked(const Move &m) {
+
+	int toInt = m.to.row;
+	int toCh = m.to.col;
+	int fromInt = m.from.row;
+	int fromCh = m.from.col;
+	Move reverse;
+	reverse.Fill(toCh, toInt, fromCh, fromInt);
+
+	Move tempMove;
+	changeTurn(); //we want to check the other player's pieces
+	makeMove(m);
+	//setting up the Move structures for each enemy figure
+	for (int i = 0; i<BOARD_SIZE; i++) {
+		for (int j = 0; j<BOARD_SIZE; j++) {
+
+			tempMove.Fill(i, j, toCh, toInt);
+			//is a movement of any figure of an enemy to the king destination possible?
+			//if it is possible, return true - killing of a king is possible
+			//valid function is run in no errors mode and is deadlocked mode
+			if (valid(tempMove, false, true)) {
+				errorMessage(ErrorMessage::isDeadlock);
+				changeTurn(); //revert previous change of players
+				makeMove(reverse); //revert king's move
+				return true;
+			}
+		}
+	}
+	//if the board was empty, killing a king is not possible
+	//if there is no piece that can kill a king, then killing of a king is not possible
+	changeTurn(); //revert previous change of players
+	makeMove(reverse); //revert king's move
+	return false;
 }
 
 
 
 bool endOfGame(Board board)
 {
-    return false;
+	return false;
 }
 
 int main()
 {
-    Board b(8);
-    b = BoardOps::INIT_BOARD;
-    cout << b;
-    
-    Move m;
-    while (true) {
-        do {
-            do {
-                m = b.getMove();
-            } while (!m.valid());
-        } while (!b.valid(m));
-        
-        b += m;
-        cout << b;
-        b.changeTurn();
-    }
-    cout << "Press Enter to Continue";
-    cin.ignore();
-    
+	Board b(8);
+	b = BoardOps::INIT_BOARD;
+	cout << b;
+
+	Move m;
+	while (true) {
+		do {
+			do {
+				m = b.getMove();
+			} while (!m.valid());
+		} while (!b.valid(m));
+
+		b += m;
+		cout << b;
+		b.changeTurn();
+	}
+	cout << "Press Enter to Continue";
+	cin.ignore();
+
 }
